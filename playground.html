@@ -1,0 +1,2072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROSTR Playground — Interactive Framework Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Barlow:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --surface-2: #161616;
+  --surface-3: #1a1a1a;
+  --border: #1f1f1f;
+  --border-2: #2a2a2a;
+  --gold: #D4AF37;
+  --gold-dim: rgba(212,175,55,0.15);
+  --gold-border: rgba(212,175,55,0.25);
+  --text: #F2ECD8;
+  --text-secondary: #888;
+  --text-muted: #555;
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Barlow', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --blue: #60a5fa;
+  --red: #f87171;
+  --green: #34d399;
+  --purple: #a78bfa;
+  --radius: 10px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+a { color: var(--gold); text-decoration: none; }
+a:hover { color: #e8c84a; }
+
+/* ── HEADER ── */
+.site-header {
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10,10,10,0.95);
+  backdrop-filter: blur(8px);
+}
+.header-logo {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--gold);
+  letter-spacing: 0.08em;
+}
+.header-nav { display: flex; gap: 8px; align-items: center; }
+.header-link {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+}
+.header-link:hover { border-color: var(--border-2); color: var(--text); }
+.header-link.active { border-color: var(--gold-border); color: var(--gold); background: var(--gold-dim); }
+.badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 20px;
+  border: 1px solid var(--gold-border);
+  color: var(--gold);
+  background: var(--gold-dim);
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* ── HERO ── */
+.hero {
+  text-align: center;
+  padding: 64px 24px 48px;
+  border-bottom: 1px solid var(--border);
+}
+.hero-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 16px;
+}
+.hero-title {
+  font-family: var(--font-serif);
+  font-size: 42px;
+  font-weight: 400;
+  color: var(--text);
+  line-height: 1.15;
+  margin-bottom: 12px;
+}
+.hero-sub {
+  font-size: 15px;
+  color: var(--text-secondary);
+  max-width: 560px;
+  margin: 0 auto 24px;
+  line-height: 1.6;
+}
+.hero-pills { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.pill {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border-2);
+  color: var(--text-secondary);
+}
+.dot { width: 6px; height: 6px; border-radius: 50%; }
+.dot-gold { background: var(--gold); }
+.dot-blue { background: var(--blue); }
+.dot-red { background: var(--red); }
+.dot-green { background: var(--green); }
+
+/* ── TAB NAV ── */
+.tab-nav {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  gap: 4px;
+  overflow-x: auto;
+}
+.tab-btn {
+  padding: 14px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  color: var(--text-secondary);
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+.tab-icon { font-size: 14px; }
+
+/* ── MAIN LAYOUT ── */
+.playground { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── PANELS ── */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.panel-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.panel-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.panel-body { padding: 20px; }
+
+/* ── INPUTS ── */
+textarea, input[type="text"], select {
+  width: 100%;
+  background: var(--surface-3);
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  padding: 12px 16px;
+  outline: none;
+  transition: border-color 0.15s;
+  resize: vertical;
+}
+textarea:focus, input[type="text"]:focus, select:focus {
+  border-color: rgba(212,175,55,0.4);
+}
+textarea { min-height: 80px; }
+select { cursor: pointer; appearance: none; }
+select option { background: #1a1a1a; }
+
+.input-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.btn-gold {
+  background: var(--gold);
+  color: #0a0a0a;
+}
+.btn-gold:hover { background: #e8c84a; }
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border-2);
+  color: var(--text-secondary);
+}
+.btn-ghost:hover { border-color: var(--border), color: var(--text); }
+.btn-sm { padding: 7px 14px; font-size: 12px; }
+
+/* ── CODE BLOCK ── */
+.code-block {
+  background: #0d0d0d;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--text-secondary);
+}
+.code-block .hl { color: var(--gold); }
+.code-block .hl-b { color: var(--blue); }
+.code-block .hl-g { color: var(--green); }
+.code-block .hl-r { color: var(--red); }
+.code-block .hl-p { color: var(--purple); }
+.code-block .hl-t { color: var(--text); }
+
+/* ── GRID ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+@media (max-width: 700px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+/* ── PAL PIPELINE ANIMATION ── */
+.pal-pipeline-demo {
+  display: flex;
+  gap: 0;
+  margin: 20px 0;
+  overflow-x: auto;
+}
+.pal-stage {
+  flex: 1;
+  min-width: 120px;
+  padding: 14px 12px;
+  border: 1px solid var(--border);
+  border-right: none;
+  position: relative;
+  background: var(--surface-2);
+  transition: all 0.3s;
+}
+.pal-stage:first-child { border-radius: 8px 0 0 8px; }
+.pal-stage:last-child { border-radius: 0 8px 8px 0; border-right: 1px solid var(--border); }
+.pal-stage.active {
+  background: rgba(212,175,55,0.06);
+  border-color: rgba(212,175,55,0.3);
+}
+.pal-stage.done { background: rgba(212,175,55,0.03); border-color: rgba(212,175,55,0.15); }
+.pal-stage-num {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  transition: color 0.3s;
+}
+.pal-stage.active .pal-stage-num { color: var(--gold); }
+.pal-stage.done .pal-stage-num { color: var(--gold); }
+.pal-stage-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: color 0.3s;
+}
+.pal-stage.active .pal-stage-name { color: var(--text); }
+.pal-stage.done .pal-stage-name { color: var(--text-secondary); }
+.pal-stage-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--border-2);
+  margin-top: 8px;
+  transition: background 0.3s;
+}
+.pal-stage.active .pal-stage-dot { background: var(--gold); box-shadow: 0 0 6px var(--gold); }
+.pal-stage.done .pal-stage-dot { background: rgba(212,175,55,0.4); }
+.pal-stage-arrow {
+  position: absolute;
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-left: none;
+  border-bottom: none;
+  transform: translateY(-50%) rotate(45deg);
+  z-index: 1;
+}
+.pal-stage.active .pal-stage-arrow { border-color: rgba(212,175,55,0.3); background: rgba(212,175,55,0.06); }
+.pal-stage:last-child .pal-stage-arrow { display: none; }
+
+/* ── OUTPUT BLOCKS ── */
+.output-wrap {
+  margin-top: 20px;
+  display: none;
+}
+.output-wrap.visible { display: block; }
+.output-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.status-dot-anim {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+  animation: pulse 1s infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* ── NPAO SLIDERS ── */
+.slider-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 48px;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.slider-name {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.slider-weight {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  display: block;
+}
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-2);
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--gold);
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(212,175,55,0.4);
+}
+.slider-val {
+  font-size: 15px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--gold);
+  text-align: right;
+}
+
+/* ── SCORE DISPLAY ── */
+.score-display {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  text-align: center;
+  margin: 20px 0;
+}
+.score-num {
+  font-size: 56px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  line-height: 1;
+  margin-bottom: 4px;
+  transition: color 0.3s;
+}
+.score-label { font-size: 12px; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; }
+.score-tier {
+  margin-top: 12px;
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.tier-immediate { background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.3); color: #34d399; }
+.tier-queued { background: rgba(212,175,55,0.10); border: 1px solid rgba(212,175,55,0.25); color: var(--gold); }
+.tier-async { background: rgba(248,113,113,0.10); border: 1px solid rgba(248,113,113,0.25); color: #f87171; }
+
+/* ── PHASE BADGE GRID ── */
+.phase-select-grid {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.phase-chip {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border-2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text-secondary);
+}
+.phase-chip:hover { border-color: var(--border); color: var(--text); }
+.phase-chip.selected { color: var(--bg); }
+.phase-chip[data-phase="prd"].selected { background: #8b5cf6; border-color: #8b5cf6; }
+.phase-chip[data-phase="design"].selected { background: var(--gold); border-color: var(--gold); }
+.phase-chip[data-phase="dev"].selected { background: var(--blue); border-color: var(--blue); }
+.phase-chip[data-phase="deploy"].selected { background: var(--red); border-color: var(--red); }
+.phase-chip[data-phase="debug"].selected { background: var(--green); border-color: var(--green); }
+
+/* ── RAG DAL TIERS ── */
+.rag-pass-container { margin: 20px 0; }
+.rag-pass {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  opacity: 0.3;
+  transition: all 0.4s;
+}
+.rag-pass.running { opacity: 1; border-color: rgba(212,175,55,0.3); }
+.rag-pass.complete { opacity: 1; border-color: rgba(52,211,153,0.2); }
+.rag-pass-header {
+  padding: 10px 16px;
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.rag-pass-title { font-size: 12px; font-weight: 700; color: var(--text-secondary); }
+.rag-pass.running .rag-pass-title { color: var(--gold); }
+.rag-pass.complete .rag-pass-title { color: var(--green); }
+.rag-pass-body {
+  padding: 12px 16px;
+  display: none;
+  gap: 8px;
+}
+.rag-pass.running .rag-pass-body,
+.rag-pass.complete .rag-pass-body { display: flex; flex-wrap: wrap; }
+.rag-source {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border-2);
+  color: var(--text-secondary);
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.tier-dot { width: 6px; height: 6px; border-radius: 50%; }
+.t1 { background: var(--gold); }
+.t2 { background: var(--blue); }
+.t3 { background: var(--purple); }
+
+.rag-confidence {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.conf-label { font-size: 11px; color: var(--text-muted); min-width: 120px; }
+.conf-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--border-2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.conf-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.8s ease;
+  background: var(--gold);
+}
+.conf-val { font-size: 12px; font-family: var(--font-mono); color: var(--gold); min-width: 36px; text-align: right; }
+
+/* ── FULL STACK DEMO ── */
+.step-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 20px 0;
+}
+.step-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  opacity: 0.4;
+  transition: all 0.4s;
+}
+.step-card.active { opacity: 1; border-color: rgba(212,175,55,0.3); }
+.step-card.done { opacity: 0.7; border-color: rgba(52,211,153,0.2); }
+.step-card-header {
+  padding: 12px 16px;
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid transparent;
+}
+.step-card.active .step-card-header { border-bottom-color: var(--border); }
+.step-num {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--border-2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+.step-card.active .step-num { border-color: var(--gold); color: var(--gold); background: rgba(212,175,55,0.08); }
+.step-card.done .step-num { border-color: var(--green); color: var(--green); background: rgba(52,211,153,0.08); }
+.step-title { font-size: 13px; font-weight: 600; color: var(--text-secondary); transition: color 0.3s; }
+.step-card.active .step-title { color: var(--text); }
+.step-component {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-left: auto;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border-2);
+  color: var(--text-muted);
+  transition: all 0.3s;
+}
+.step-card.active .step-component { border-color: var(--gold-border); color: var(--gold); background: var(--gold-dim); }
+.step-body {
+  padding: 16px;
+  display: none;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.step-card.active .step-body { display: block; }
+
+/* ── TOOLTIP ── */
+.info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+.info-icon { color: var(--gold); flex-shrink: 0; margin-top: 1px; }
+
+/* ── CALLOUT ── */
+.callout {
+  background: rgba(212,175,55,0.04);
+  border: 1px solid rgba(212,175,55,0.15);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 8px 8px 0;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 16px 0;
+}
+
+/* ── SPACERS ── */
+.mt-8 { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; }
+.mt-20 { margin-top: 20px; }
+.mt-24 { margin-top: 24px; }
+.mb-8 { margin-bottom: 8px; }
+.mb-12 { margin-bottom: 12px; }
+.mb-16 { margin-bottom: 16px; }
+
+.flex { display: flex; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+
+/* ── SPINNER ── */
+.spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(212,175,55,0.2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header class="site-header">
+  <div class="header-logo">ROSTR<span class="badge">Playground</span></div>
+  <nav class="header-nav">
+    <a href="index.html" class="header-link">Paper</a>
+    <a href="playground.html" class="header-link active">Playground</a>
+    <a href="https://github.com/rostr-ai" class="header-link" target="_blank">GitHub</a>
+  </nav>
+</header>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <div class="hero-label">Interactive Demo · April 2026</div>
+  <h1 class="hero-title">ROSTR Framework Playground</h1>
+  <p class="hero-sub">Test the four framework components live. Enter real requests, adjust parameters, and see the system respond with authentic outputs.</p>
+  <div class="hero-pills">
+    <div class="pill"><div class="dot dot-gold"></div>PAL Compiler</div>
+    <div class="pill"><div class="dot dot-blue"></div>RAG DAL</div>
+    <div class="pill"><div class="dot dot-red"></div>NPAO Scorer</div>
+    <div class="pill"><div class="dot dot-green"></div>Full Stack</div>
+  </div>
+</div>
+
+<!-- ── TABS ── -->
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('pal', this)">
+    <span class="tab-icon">⚙</span> PAL Compiler
+  </button>
+  <button class="tab-btn" onclick="switchTab('npao', this)">
+    <span class="tab-icon">⬡</span> NPAO Priority Scorer
+  </button>
+  <button class="tab-btn" onclick="switchTab('ragdal', this)">
+    <span class="tab-icon">◈</span> RAG DAL Pipeline
+  </button>
+  <button class="tab-btn" onclick="switchTab('fullstack', this)">
+    <span class="tab-icon">◎</span> Full Stack Walkthrough
+  </button>
+</div>
+
+<div class="playground">
+
+<!-- ══════════════════════════════════════════
+     TAB 1: PAL COMPILER
+══════════════════════════════════════════ -->
+<div class="tab-panel active" id="tab-pal">
+  <div class="grid-2">
+
+    <!-- INPUT -->
+    <div>
+      <div class="panel mb-16">
+        <div class="panel-header">
+          <span class="panel-title">Input — Natural Language Request</span>
+        </div>
+        <div class="panel-body">
+          <label class="input-label">Your request (try anything)</label>
+          <textarea id="pal-input" placeholder="e.g. ship it, fix the login bug, make the landing page better, write email to that fintech lead..."></textarea>
+
+          <div class="mt-12 mb-8">
+            <label class="input-label">Or try an example</label>
+            <select id="pal-examples" onchange="loadPalExample(this.value)">
+              <option value="">— Select an example —</option>
+              <option value="fix">fix the thing</option>
+              <option value="ship">ship it</option>
+              <option value="email">write email to that fintech guy</option>
+              <option value="landing">make the landing page better</option>
+              <option value="qa">does this look right</option>
+              <option value="agent">I need an agent that monitors our HubSpot daily</option>
+              <option value="pricing">launch a pricing page for the product</option>
+              <option value="debug">why is the checkout flow broken</option>
+            </select>
+          </div>
+
+          <div class="mt-16 flex gap-8">
+            <button class="btn btn-gold" onclick="runPAL()">
+              <span id="pal-btn-icon">⚙</span>
+              <span id="pal-btn-label">Compile Intent</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="clearPAL()">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PIPELINE ANIMATION -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">5-Stage Compilation Pipeline</span>
+        </div>
+        <div class="panel-body">
+          <div class="pal-pipeline-demo">
+            <div class="pal-stage" id="pal-s1">
+              <div class="pal-stage-num">Stage 1</div>
+              <div class="pal-stage-name">Intent Extract</div>
+              <div class="pal-stage-dot"></div>
+              <div class="pal-stage-arrow"></div>
+            </div>
+            <div class="pal-stage" id="pal-s2">
+              <div class="pal-stage-num">Stage 2</div>
+              <div class="pal-stage-name">Context Inject</div>
+              <div class="pal-stage-dot"></div>
+              <div class="pal-stage-arrow"></div>
+            </div>
+            <div class="pal-stage" id="pal-s3">
+              <div class="pal-stage-num">Stage 3</div>
+              <div class="pal-stage-name">Enhance</div>
+              <div class="pal-stage-dot"></div>
+              <div class="pal-stage-arrow"></div>
+            </div>
+            <div class="pal-stage" id="pal-s4">
+              <div class="pal-stage-num">Stage 4</div>
+              <div class="pal-stage-name">Runtime Compile</div>
+              <div class="pal-stage-dot"></div>
+              <div class="pal-stage-arrow"></div>
+            </div>
+            <div class="pal-stage" id="pal-s5">
+              <div class="pal-stage-num">Stage 5</div>
+              <div class="pal-stage-name">Route</div>
+              <div class="pal-stage-dot"></div>
+            </div>
+          </div>
+          <div class="info-row">
+            <span class="info-icon">→</span>
+            <span id="pal-stage-desc" style="font-size:12px; color: var(--text-muted); font-family: var(--font-mono);">Waiting for input...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OUTPUT -->
+    <div>
+      <div class="panel mb-16">
+        <div class="panel-header">
+          <span class="panel-title">Stage 1 — Extracted Intent</span>
+          <span id="pal-ambig-badge" style="display:none; font-size:10px; font-family:var(--font-mono); color: var(--text-muted);"></span>
+        </div>
+        <div class="panel-body">
+          <div id="pal-intent-placeholder" style="color: var(--text-muted); font-size: 13px; font-style: italic;">Compile a request to see extracted intent...</div>
+          <div id="pal-intent-output" class="code-block hidden"></div>
+        </div>
+      </div>
+
+      <div class="panel mb-16">
+        <div class="panel-header">
+          <span class="panel-title">Stage 3 — Enhanced Prompt</span>
+        </div>
+        <div class="panel-body">
+          <div id="pal-enhance-placeholder" style="color: var(--text-muted); font-size: 13px; font-style: italic;">Enhanced instruction appears here...</div>
+          <div id="pal-enhance-output" class="hidden" style="font-size: 13px; color: var(--text-secondary); line-height: 1.7; white-space: pre-wrap; font-family: var(--font-mono);"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Stage 4 — Runtime Manifest</span>
+        </div>
+        <div class="panel-body">
+          <div id="pal-runtime-placeholder" style="color: var(--text-muted); font-size: 13px; font-style: italic;">Agent runtime configuration appears here...</div>
+          <div id="pal-runtime-output" class="code-block hidden"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB 2: NPAO PRIORITY SCORER
+══════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-npao">
+  <div class="grid-2">
+
+    <!-- INPUTS -->
+    <div>
+      <div class="panel mb-16">
+        <div class="panel-header">
+          <span class="panel-title">Task Context</span>
+        </div>
+        <div class="panel-body">
+          <label class="input-label">Task description</label>
+          <input type="text" id="npao-task" placeholder="e.g. Fix the payment webhook failure" oninput="updateNPAO()">
+
+          <div class="mt-16">
+            <label class="input-label">Current development phase</label>
+            <div class="phase-select-grid">
+              <div class="phase-chip selected" data-phase="prd" onclick="selectPhase('prd', this)">PreD</div>
+              <div class="phase-chip" data-phase="design" onclick="selectPhase('design', this)">Design</div>
+              <div class="phase-chip" data-phase="dev" onclick="selectPhase('dev', this)">Development</div>
+              <div class="phase-chip" data-phase="deploy" onclick="selectPhase('deploy', this)">Deployment</div>
+              <div class="phase-chip" data-phase="debug" onclick="selectPhase('debug', this)">Debugging</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Scoring Dimensions</span>
+        </div>
+        <div class="panel-body">
+          <div class="slider-row">
+            <div>
+              <div class="slider-name">Phase Urgency</div>
+              <span class="slider-weight">weight: ×0.35</span>
+            </div>
+            <input type="range" id="sl-urgency" min="0" max="10" value="2" oninput="updateNPAO()">
+            <div class="slider-val" id="v-urgency">2</div>
+          </div>
+          <div class="slider-row">
+            <div>
+              <div class="slider-name">Dependency Impact</div>
+              <span class="slider-weight">weight: ×0.30</span>
+            </div>
+            <input type="range" id="sl-dependency" min="0" max="10" value="5" oninput="updateNPAO()">
+            <div class="slider-val" id="v-dependency">5</div>
+          </div>
+          <div class="slider-row">
+            <div>
+              <div class="slider-name">Business Impact</div>
+              <span class="slider-weight">weight: ×0.25</span>
+            </div>
+            <input type="range" id="sl-business" min="0" max="10" value="6" oninput="updateNPAO()">
+            <div class="slider-val" id="v-business">6</div>
+          </div>
+          <div class="slider-row">
+            <div>
+              <div class="slider-name">Resource Efficiency</div>
+              <span class="slider-weight">weight: ×0.10</span>
+            </div>
+            <input type="range" id="sl-resource" min="0" max="10" value="7" oninput="updateNPAO()">
+            <div class="slider-val" id="v-resource">7</div>
+          </div>
+
+          <div class="callout mt-12" style="font-size:12px;">
+            <strong style="color: var(--gold);">Phase Urgency Reference:</strong> Debugging P0 = 10, Deployment = 8, Development = 6, Design = 4, PreD = 2 (with modifiers)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OUTPUT -->
+    <div>
+      <div class="score-display">
+        <div class="score-num" id="npao-score">4.55</div>
+        <div class="score-label">Composite Priority Score (0–10)</div>
+        <div id="npao-tier" class="score-tier tier-queued">Queued — next available agent</div>
+      </div>
+
+      <div class="panel mb-16">
+        <div class="panel-header">
+          <span class="panel-title">Score Breakdown</span>
+        </div>
+        <div class="panel-body">
+          <div id="npao-breakdown" class="code-block" style="white-space:pre; font-size: 12px;"></div>
+        </div>
+      </div>
+
+      <div class="panel mb-16">
+        <div class="panel-header">
+          <span class="panel-title">Navigate — Phase Classification</span>
+        </div>
+        <div class="panel-body">
+          <div id="npao-navigate" style="font-size: 13px; color: var(--text-secondary); line-height: 1.7;"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Allocate — Agent Recommendation</span>
+        </div>
+        <div class="panel-body">
+          <div id="npao-allocate" style="font-size: 13px; color: var(--text-secondary); line-height: 1.7;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB 3: RAG DAL PIPELINE
+══════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-ragdal">
+  <div class="grid-2">
+
+    <!-- INPUT -->
+    <div>
+      <div class="panel mb-16">
+        <div class="panel-header">
+          <span class="panel-title">Research Query</span>
+        </div>
+        <div class="panel-body">
+          <label class="input-label">What do you want to research?</label>
+          <textarea id="ragdal-query" placeholder="e.g. What do independent musicians pay for music promotion tools today?" style="min-height: 64px;"></textarea>
+
+          <div class="mt-12">
+            <label class="input-label">Retrieval Mode</label>
+            <select id="ragdal-mode">
+              <option value="general">General Knowledge Expansion (all tiers)</option>
+              <option value="academic">Academic Research (Tier 1 priority)</option>
+              <option value="news">News & Trend Sentinel (Tier 2–3, recency-weighted)</option>
+            </select>
+          </div>
+
+          <div class="mt-12">
+            <label class="input-label">Or try an example query</label>
+            <select onchange="loadRagExample(this.value)">
+              <option value="">— Select —</option>
+              <option value="music">Independent musician promotion tool pricing</option>
+              <option value="eor">Global EOR market competitive landscape 2026</option>
+              <option value="agent">Multi-agent AI orchestration frameworks</option>
+              <option value="pricing">SaaS pricing page conversion best practices</option>
+              <option value="stripe">Stripe vs Paddle for B2B subscriptions</option>
+            </select>
+          </div>
+
+          <div class="mt-16">
+            <button class="btn btn-gold" onclick="runRAGDAL()">
+              <span id="rag-btn-icon">◈</span>
+              <span id="rag-btn-label">Run Retrieval Pipeline</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOURCE TIER LEGEND -->
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Source Tier Architecture</span></div>
+        <div class="panel-body">
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; align-items:flex-start; gap:12px;">
+              <div class="tier-dot t1" style="width:10px;height:10px;margin-top:3px;flex-shrink:0;"></div>
+              <div>
+                <div style="font-size:12px; font-weight:700; color:var(--gold); margin-bottom:2px;">Tier 1 — Primary &amp; Authoritative · weight: 1.0</div>
+                <div style="font-size:11px; color:var(--text-muted);">arXiv, PubMed, JSTOR, Wikipedia, official .gov/.edu, standards bodies</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:12px;">
+              <div class="tier-dot t2" style="width:10px;height:10px;margin-top:3px;flex-shrink:0;"></div>
+              <div>
+                <div style="font-size:12px; font-weight:700; color:var(--blue); margin-bottom:2px;">Tier 2 — Verified &amp; Editorial · weight: 0.75</div>
+                <div style="font-size:11px; color:var(--text-muted);">Reuters, AP, NYT, WSJ, TechCrunch, Gartner, Forrester, peer-reviewed</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:12px;">
+              <div class="tier-dot t3" style="width:10px;height:10px;margin-top:3px;flex-shrink:0;"></div>
+              <div>
+                <div style="font-size:12px; font-weight:700; color:var(--purple); margin-bottom:2px;">Tier 3 — Community &amp; UGC · weight: 0.40</div>
+                <div style="font-size:11px; color:var(--text-muted);">Reddit, Hacker News, Stack Overflow, Substack, LinkedIn, user reviews</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OUTPUT -->
+    <div>
+      <div class="panel mb-16">
+        <div class="panel-header">
+          <span class="panel-title">Retrieval Passes</span>
+          <span id="rag-status" style="font-size:11px; color:var(--text-muted);">Idle</span>
+        </div>
+        <div class="panel-body">
+          <div class="rag-pass-container" id="rag-passes">
+            <div class="rag-pass" id="rag-p1">
+              <div class="rag-pass-header">
+                <span class="rag-pass-title">Pass 1 — Broad Sweep (5 searches, all tiers)</span>
+                <span id="rag-p1-badge" style="font-size:10px; font-family:var(--font-mono); color:var(--text-muted);"></span>
+              </div>
+              <div class="rag-pass-body" id="rag-p1-sources"></div>
+            </div>
+            <div class="rag-pass" id="rag-p2">
+              <div class="rag-pass-header">
+                <span class="rag-pass-title">Pass 2 — Gap Fill (targeted search)</span>
+                <span id="rag-p2-badge" style="font-size:10px; font-family:var(--font-mono); color:var(--text-muted);"></span>
+              </div>
+              <div class="rag-pass-body" id="rag-p2-sources"></div>
+            </div>
+            <div class="rag-pass" id="rag-p3">
+              <div class="rag-pass-header">
+                <span class="rag-pass-title">Pass 3 — Deep Verification (Tier 1 primary)</span>
+                <span id="rag-p3-badge" style="font-size:10px; font-family:var(--font-mono); color:var(--text-muted);"></span>
+              </div>
+              <div class="rag-pass-body" id="rag-p3-sources"></div>
+            </div>
+          </div>
+
+          <div id="rag-confidence-wrap" class="hidden">
+            <div style="margin-bottom:8px;">
+              <span style="font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted);">Sub-Topic Confidence</span>
+            </div>
+            <div id="rag-confidence-bars"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">RAG DAL Report Output</span>
+        </div>
+        <div class="panel-body">
+          <div id="rag-report-placeholder" style="color: var(--text-muted); font-size: 13px; font-style: italic;">Run the pipeline to see the structured report...</div>
+          <div id="rag-report-output" class="code-block hidden" style="white-space: pre-wrap; font-size: 12px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB 4: FULL STACK WALKTHROUGH
+══════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-fullstack">
+  <div class="grid-2">
+    <!-- LEFT: Input + controls -->
+    <div>
+      <div class="panel mb-16">
+        <div class="panel-header">
+          <span class="panel-title">Request</span>
+        </div>
+        <div class="panel-body">
+          <label class="input-label">Enter a product or engineering request</label>
+          <textarea id="fs-input" placeholder="e.g. We need to launch a pricing page for Artispreneur" style="min-height:64px;"></textarea>
+
+          <div class="mt-12">
+            <label class="input-label">Or use a preset scenario</label>
+            <select onchange="loadFsScenario(this.value)">
+              <option value="">— Select scenario —</option>
+              <option value="pricing">Launch a pricing page</option>
+              <option value="billing">Add Stripe subscription billing</option>
+              <option value="rfp">Build an RFP response agent</option>
+              <option value="outreach">Build a personalized outreach system</option>
+              <option value="debug">Production bug: checkout flow broken</option>
+            </select>
+          </div>
+
+          <div class="mt-16">
+            <button class="btn btn-gold" onclick="runFullStack()">
+              <span id="fs-btn-icon">◎</span>
+              <span id="fs-btn-label">Run Full Stack</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Component Legend</span></div>
+        <div class="panel-body" style="display:flex; flex-direction:column; gap:10px;">
+          <div class="flex gap-8 items-center"><span style="width:48px;text-align:center;font-size:10px;font-weight:700;letter-spacing:0.1em;padding:3px 6px;border-radius:20px;border:1px solid var(--gold-border);color:var(--gold);background:var(--gold-dim);">PAL</span><span style="font-size:12px;color:var(--text-secondary);">Compiles intent, injects context, routes to NPAO</span></div>
+          <div class="flex gap-8 items-center"><span style="width:48px;text-align:center;font-size:10px;font-weight:700;letter-spacing:0.1em;padding:3px 6px;border-radius:20px;border:1px solid rgba(248,113,113,0.3);color:#f87171;background:rgba(248,113,113,0.08);">NPAO</span><span style="font-size:12px;color:var(--text-secondary);">Classifies phase, scores priority, assigns agents</span></div>
+          <div class="flex gap-8 items-center"><span style="width:48px;text-align:center;font-size:10px;font-weight:700;letter-spacing:0.1em;padding:3px 6px;border-radius:20px;border:1px solid rgba(96,165,250,0.3);color:#60a5fa;background:rgba(96,165,250,0.08);">RAG</span><span style="font-size:12px;color:var(--text-secondary);">Runs 3-pass retrieval, builds knowledge base</span></div>
+          <div class="flex gap-8 items-center"><span style="width:48px;text-align:center;font-size:10px;font-weight:700;letter-spacing:0.1em;padding:3px 6px;border-radius:20px;border:1px solid rgba(52,211,153,0.3);color:#34d399;background:rgba(52,211,153,0.08);">HUB</span><span style="font-size:12px;color:var(--text-secondary);">Persists knowledge, routes agents, maintains state</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Step flow -->
+    <div>
+      <div class="step-flow" id="fs-steps">
+        <div class="step-card" id="fs-step-1">
+          <div class="step-card-header">
+            <div class="step-num">1</div>
+            <div class="step-title">PAL compiles the raw request</div>
+            <div class="step-component">PAL</div>
+          </div>
+          <div class="step-body" id="fs-body-1"></div>
+        </div>
+        <div class="step-card" id="fs-step-2">
+          <div class="step-card-header">
+            <div class="step-num">2</div>
+            <div class="step-title">NPAO builds the task tree</div>
+            <div class="step-component">NPAO</div>
+          </div>
+          <div class="step-body" id="fs-body-2"></div>
+        </div>
+        <div class="step-card" id="fs-step-3">
+          <div class="step-card-header">
+            <div class="step-num">3</div>
+            <div class="step-title">RAG DAL executes for PreD research</div>
+            <div class="step-component">RAG</div>
+          </div>
+          <div class="step-body" id="fs-body-3"></div>
+        </div>
+        <div class="step-card" id="fs-step-4">
+          <div class="step-card-header">
+            <div class="step-num">4</div>
+            <div class="step-title">Agents execute in phase order</div>
+            <div class="step-component">HUB</div>
+          </div>
+          <div class="step-body" id="fs-body-4"></div>
+        </div>
+        <div class="step-card" id="fs-step-5">
+          <div class="step-card-header">
+            <div class="step-num">5</div>
+            <div class="step-title">Reference Hub compounds</div>
+            <div class="step-component">HUB</div>
+          </div>
+          <div class="step-body" id="fs-body-5"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /playground -->
+
+<script>
+/* ══════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════ */
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function setPalStage(n, desc) {
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById('pal-s' + i);
+    el.classList.remove('active', 'done');
+    if (i < n) el.classList.add('done');
+    else if (i === n) el.classList.add('active');
+  }
+  document.getElementById('pal-stage-desc').textContent = desc;
+}
+
+/* ══════════════════════════════════════════
+   PAL COMPILER DATA
+══════════════════════════════════════════ */
+const palData = {
+  fix: {
+    raw: 'fix the thing',
+    intent: {
+      primary_intent: 'Debug and fix the active bug',
+      domain: 'code',
+      subject: 'primary bug in active file',
+      constraints: ['root cause before fix', 'report-only mode: off'],
+      desired_output: 'working code + explanation of fix',
+      urgency: 'immediate',
+      ambiguity_score: 0.72
+    },
+    enhanced: `Systematically debug the primary bug in the active file:
+
+1. Read the error message or failing behavior description
+2. Identify the root cause — do NOT apply a fix until root cause is confirmed
+3. Trace the call stack or data flow to the point of failure
+4. Draft a minimal, targeted fix (not a refactor)
+5. Verify the fix doesn't break adjacent functionality
+6. Commit with a clear message: "[bug] root cause: what & why"
+
+Done when: the failing behavior no longer occurs and no regressions are introduced.`,
+    runtime: {
+      agent_type: 'debugger',
+      model: 'claude-sonnet-4-6',
+      tools_enabled: { file_system: 'read+write', code_execution: true, bash: true },
+      memory_mode: 'project',
+      phase: 'debugging',
+      priority_override: true,
+      output_format: 'code + explanation'
+    }
+  },
+  ship: {
+    raw: 'ship it',
+    intent: {
+      primary_intent: 'Deploy active branch to production',
+      domain: 'deploy',
+      subject: 'active branch',
+      constraints: ['run pre-flight checks first', 'create PR'],
+      desired_output: 'deployed feature + production verification',
+      urgency: 'immediate',
+      ambiguity_score: 0.45
+    },
+    enhanced: `Deploy the active branch to production:
+
+1. Run full test suite — abort if any failures
+2. Check diff against main — flag any unexpected changes
+3. Create PR with summary of changes
+4. Merge to main after approval (or if auto-merge is enabled)
+5. Deploy to staging → run smoke tests
+6. Deploy to production → run canary check
+7. Monitor for 5 minutes post-deploy
+
+Done when: production canary passes with no errors.`,
+    runtime: {
+      agent_type: 'deployer',
+      model: 'claude-sonnet-4-6',
+      tools_enabled: { bash: true, browser: 'headless', file_system: 'read' },
+      memory_mode: 'project',
+      phase: 'deployment',
+      output_format: 'action + report'
+    }
+  },
+  email: {
+    raw: 'write email to that fintech guy',
+    intent: {
+      primary_intent: 'Draft cold outreach email to fintech prospect',
+      domain: 'sales',
+      subject: 'fintech prospect cold email',
+      constraints: ['under 150 words', 'B2B tone', 'clear CTA'],
+      desired_output: 'ready-to-send email draft',
+      urgency: 'queued',
+      ambiguity_score: 0.68
+    },
+    enhanced: `Draft a cold outreach email to a fintech prospect:
+
+1. Research the prospect's company (use RAG DAL if available)
+2. Identify one specific, relevant pain point to lead with
+3. Write the email: under 150 words, no fluff, B2B professional tone
+4. Structure: Hook (1 sentence) → Value prop (2 sentences) → CTA (1 sentence)
+5. CTA must be low-friction: "15 minutes?" not "schedule a call"
+6. Do NOT start with "I hope this finds you well" or similar
+
+Done when: email reads at grade 8, under 150 words, and would not get marked as spam.`,
+    runtime: {
+      agent_type: 'specialist',
+      model: 'claude-haiku-4-5',
+      tools_enabled: { web_search: true, ragdal: 'org/atlas-hxm/icp' },
+      memory_mode: 'session',
+      phase: 'prd',
+      output_format: 'markdown (email draft)'
+    }
+  },
+  landing: {
+    raw: 'make the landing page better',
+    intent: {
+      primary_intent: 'Audit and improve landing page conversion',
+      domain: 'code + design',
+      subject: 'landing page',
+      constraints: [],
+      desired_output: 'scored audit + implemented fixes committed separately',
+      urgency: 'queued',
+      ambiguity_score: 0.82
+    },
+    enhanced: `Audit the landing page against 5 conversion dimensions:
+
+1. Headline clarity — does it communicate value in <8 words?
+2. CTA placement and copy — above fold, action verb, low friction
+3. Social proof presence — testimonials, logos, numbers
+4. Load time — target <2s LCP
+5. Mobile layout — tap targets, text size, scroll depth
+
+For each dimension:
+  → Score 0–10
+  → Explain what a 10 looks like
+  → Implement the highest-impact fix
+  → Commit each fix separately with score in the message
+
+Done when: all 5 dimensions scored and top-priority fix committed.`,
+    runtime: {
+      agent_type: 'builder + designer',
+      model: 'claude-sonnet-4-6',
+      tools_enabled: { browser: 'headless', file_system: 'read+write', code_execution: true },
+      memory_mode: 'project',
+      phase: 'design → development',
+      output_format: 'code + audit report'
+    }
+  },
+  qa: {
+    raw: 'does this look right',
+    intent: {
+      primary_intent: 'Visual QA of most recent UI change',
+      domain: 'design',
+      subject: 'latest UI change',
+      constraints: [],
+      desired_output: 'QA report flagging visual inconsistencies',
+      urgency: 'immediate',
+      ambiguity_score: 0.55
+    },
+    enhanced: `Run a visual QA review of the most recent UI change:
+
+1. Open the affected page/component in a browser
+2. Check against the design system: colors, spacing, typography, borders
+3. Test on mobile viewport (375px) and desktop (1440px)
+4. Look for: misaligned elements, incorrect spacing, wrong font weights, color inconsistencies
+5. Check dark mode if applicable
+6. List every issue found with: screenshot location, expected vs. actual, severity
+
+Done when: all visual issues are documented with specifics. Do NOT auto-fix — report only.`,
+    runtime: {
+      agent_type: 'reviewer',
+      model: 'claude-sonnet-4-6',
+      tools_enabled: { browser: 'visual', file_system: 'read' },
+      memory_mode: 'session',
+      phase: 'design',
+      output_format: 'QA report (markdown)'
+    }
+  },
+  agent: {
+    raw: 'I need an agent that monitors our HubSpot daily',
+    intent: {
+      primary_intent: 'Build a new automated HubSpot monitoring agent',
+      domain: 'ops',
+      subject: 'HubSpot monitoring agent',
+      constraints: ['daily trigger', 'CRM read access', 'draft emails for review'],
+      desired_output: 'agent spec + skill file',
+      urgency: 'queued',
+      ambiguity_score: 0.6
+    },
+    enhanced: `PAL Agent Factory Mode: Build a HubSpot Pipeline Mover Agent
+
+Requirements extracted:
+  - Trigger: daily at 9:00 AM
+  - Action: query deals with last_activity > 7 days
+  - Per deal: pull contact info + deal history from HubSpot
+  - Draft personalized follow-up email per deal (PAL-enhanced)
+  - Queue drafts for human approval before sending
+  - On approval: update HubSpot CRM + send via configured email
+
+Generate:
+  1. Agent spec YAML (name, tools, phases, triggers, workflow)
+  2. Claude Code skill file
+  3. HubSpot API query template
+  4. Register agent in Rostr Hub (org namespace)
+
+Done when: agent spec is generated and registered with the hub.`,
+    runtime: {
+      agent_type: 'orchestrator (factory mode)',
+      model: 'claude-sonnet-4-6',
+      tools_enabled: { hubspot_api: 'read', file_system: 'write', ragdal: 'org' },
+      memory_mode: 'persistent',
+      phase: 'prd → design',
+      output_format: 'agent spec + skill file'
+    }
+  },
+  pricing: {
+    raw: 'launch a pricing page for the product',
+    intent: {
+      primary_intent: 'Design, build, and ship a product pricing page',
+      domain: 'product + code',
+      subject: 'pricing page',
+      constraints: [],
+      desired_output: 'live pricing page on production',
+      urgency: 'queued',
+      ambiguity_score: 0.78
+    },
+    enhanced: `Multi-phase task detected. Decompose into 5D workflow:
+
+PreD: Define pricing tiers, run competitive analysis (RAG DAL), go/no-go
+Design: Wireframe + copy + design review
+Development: Build component, wire payments, code review, QA
+Deployment: Staging deploy, visual QA, production deploy, canary check
+
+Start with PreD:
+1. Research competitor pricing (RAG DAL: music promotion tools pricing)
+2. Define 3 pricing tiers with features
+3. Write pricing page copy for each tier
+4. Get go/no-go decision before design begins
+
+NPAO will manage task graph and phase gating.`,
+    runtime: {
+      agent_type: 'orchestrator → research → designer → builder → deployer',
+      model: 'claude-sonnet-4-6',
+      tools_enabled: { ragdal: true, file_system: 'read+write', browser: 'headless', bash: true },
+      memory_mode: 'project',
+      phase: 'prd (start)',
+      output_format: 'live deployed page'
+    }
+  },
+  debug: {
+    raw: 'why is the checkout flow broken',
+    intent: {
+      primary_intent: 'Root-cause investigate checkout flow failure',
+      domain: 'debug',
+      subject: 'checkout flow',
+      constraints: ['root cause first', 'priority override'],
+      desired_output: 'root cause report + fix',
+      urgency: 'immediate',
+      ambiguity_score: 0.38
+    },
+    enhanced: `P0 debug investigation: checkout flow failure.
+
+Phase: Debugging (Priority Override — preempts all other tasks)
+
+1. Reproduce the failure — get exact error message and stack trace
+2. Check server logs for the last 2 hours
+3. Check Stripe webhook delivery logs
+4. Identify the failing function/endpoint
+5. Trace data flow from payment initiation to confirmation
+6. Document root cause in one sentence: "X fails because Y"
+7. Implement targeted fix — do not refactor surrounding code
+8. Add regression test for the exact failure scenario
+9. Write post-mortem: root cause, fix, prevention
+
+Done when: checkout completes end-to-end on staging + regression test passes.`,
+    runtime: {
+      agent_type: 'debugger',
+      model: 'claude-opus-4-6',
+      tools_enabled: { bash: true, file_system: 'read+write', browser: 'headless', code_execution: true },
+      memory_mode: 'project',
+      phase: 'debugging',
+      priority_override: true,
+      output_format: 'root cause report + fix + post-mortem'
+    }
+  }
+};
+
+function loadPalExample(val) {
+  if (!val) return;
+  document.getElementById('pal-input').value = palData[val].raw;
+}
+
+async function runPAL() {
+  const raw = document.getElementById('pal-input').value.trim();
+  if (!raw) return;
+
+  // Match to data or use generic
+  let key = Object.keys(palData).find(k =>
+    raw.toLowerCase().includes(palData[k].raw.toLowerCase().split(' ')[0]) ||
+    raw.toLowerCase() === palData[k].raw.toLowerCase()
+  );
+  if (!key) {
+    // Fallback: pick by keyword
+    if (raw.match(/fix|bug|broken|error|crash/i)) key = 'fix';
+    else if (raw.match(/ship|deploy|push|release/i)) key = 'ship';
+    else if (raw.match(/email|outreach|write.*to/i)) key = 'email';
+    else if (raw.match(/landing|page|better|improve/i)) key = 'landing';
+    else if (raw.match(/checkout|payment/i)) key = 'debug';
+    else if (raw.match(/agent|hubspot|monitor/i)) key = 'agent';
+    else if (raw.match(/pricing/i)) key = 'pricing';
+    else if (raw.match(/look|visual|design/i)) key = 'qa';
+    else key = 'landing'; // default
+  }
+
+  const d = palData[key];
+  const btn = document.querySelector('[onclick="runPAL()"]');
+
+  // Reset
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById('pal-s' + i);
+    el.classList.remove('active', 'done');
+  }
+  ['pal-intent-output','pal-enhance-output','pal-runtime-output'].forEach(id => {
+    document.getElementById(id).classList.add('hidden');
+  });
+  ['pal-intent-placeholder','pal-enhance-placeholder','pal-runtime-placeholder'].forEach(id => {
+    document.getElementById(id).style.display = 'block';
+  });
+
+  btn.querySelector('#pal-btn-label').textContent = 'Compiling...';
+
+  // Stage 1
+  setPalStage(1, 'Parsing verbs, domain, constraints, urgency...');
+  await sleep(600);
+
+  setPalStage(2, 'Loading session, project, org, team context from hub...');
+  await sleep(500);
+
+  setPalStage(3, 'Expanding vague intent into precise instructions...');
+
+  // Show intent
+  document.getElementById('pal-intent-placeholder').style.display = 'none';
+  const ambig = d.intent.ambiguity_score;
+  document.getElementById('pal-ambig-badge').textContent = `ambiguity: ${ambig}`;
+  document.getElementById('pal-ambig-badge').style.display = 'inline';
+  document.getElementById('pal-ambig-badge').style.color = ambig > 0.7 ? '#f87171' : ambig > 0.5 ? '#fbbf24' : '#34d399';
+
+  const intentStr = JSON.stringify(d.intent, null, 2);
+  document.getElementById('pal-intent-output').innerHTML = syntaxHighlightJSON(intentStr);
+  document.getElementById('pal-intent-output').classList.remove('hidden');
+
+  await sleep(700);
+  setPalStage(4, 'Generating runtime manifest: tools, memory, permissions...');
+
+  // Show enhancement
+  document.getElementById('pal-enhance-placeholder').style.display = 'none';
+  document.getElementById('pal-enhance-output').textContent = d.enhanced;
+  document.getElementById('pal-enhance-output').classList.remove('hidden');
+
+  await sleep(600);
+  setPalStage(5, 'Routing to NPAO → phase classification + agent assignment');
+
+  // Show runtime
+  document.getElementById('pal-runtime-placeholder').style.display = 'none';
+  document.getElementById('pal-runtime-output').innerHTML = syntaxHighlightRuntime(d.runtime);
+  document.getElementById('pal-runtime-output').classList.remove('hidden');
+
+  // Mark all done
+  await sleep(300);
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById('pal-s' + i);
+    el.classList.remove('active');
+    el.classList.add('done');
+  }
+  document.getElementById('pal-stage-desc').textContent = '✓ Compilation complete — manifest ready';
+  btn.querySelector('#pal-btn-label').textContent = 'Compile Intent';
+}
+
+function clearPAL() {
+  document.getElementById('pal-input').value = '';
+  document.getElementById('pal-examples').value = '';
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById('pal-s' + i);
+    el.classList.remove('active', 'done');
+  }
+  document.getElementById('pal-stage-desc').textContent = 'Waiting for input...';
+  ['pal-intent-output','pal-enhance-output','pal-runtime-output'].forEach(id => {
+    document.getElementById(id).classList.add('hidden');
+  });
+  ['pal-intent-placeholder','pal-enhance-placeholder','pal-runtime-placeholder'].forEach(id => {
+    document.getElementById(id).style.display = 'block';
+  });
+  document.getElementById('pal-ambig-badge').style.display = 'none';
+}
+
+function syntaxHighlightJSON(str) {
+  return str
+    .replace(/(".*?"):/g, '<span class="hl">$1</span>:')
+    .replace(/: (".*?")/g, ': <span class="hl-g">$1</span>')
+    .replace(/: (\d+\.?\d*)/g, ': <span class="hl-b">$1</span>')
+    .replace(/: (true|false)/g, ': <span class="hl-p">$1</span>');
+}
+
+function syntaxHighlightRuntime(obj) {
+  let lines = [];
+  for (const [k, v] of Object.entries(obj)) {
+    if (typeof v === 'object') {
+      lines.push(`<span class="hl">${k}</span>:`);
+      for (const [k2, v2] of Object.entries(v)) {
+        lines.push(`  <span class="hl">${k2}</span>: <span class="hl-g">${v2}</span>`);
+      }
+    } else if (typeof v === 'boolean') {
+      lines.push(`<span class="hl">${k}</span>: <span class="hl-p">${v}</span>`);
+    } else if (typeof v === 'number') {
+      lines.push(`<span class="hl">${k}</span>: <span class="hl-b">${v}</span>`);
+    } else {
+      lines.push(`<span class="hl">${k}</span>: <span class="hl-g">"${v}"</span>`);
+    }
+  }
+  return lines.join('\n');
+}
+
+/* ══════════════════════════════════════════
+   NPAO SCORER
+══════════════════════════════════════════ */
+const phaseUrgencyBase = { prd: 2, design: 4, dev: 6, deploy: 8, debug: 10 };
+let selectedPhase = 'prd';
+
+function selectPhase(phase, el) {
+  selectedPhase = phase;
+  document.querySelectorAll('.phase-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  // Auto-set urgency slider
+  const urgency = phaseUrgencyBase[phase];
+  document.getElementById('sl-urgency').value = urgency;
+  document.getElementById('v-urgency').textContent = urgency;
+  updateNPAO();
+}
+
+function updateNPAO() {
+  const urgency = +document.getElementById('sl-urgency').value;
+  const dependency = +document.getElementById('sl-dependency').value;
+  const business = +document.getElementById('sl-business').value;
+  const resource = +document.getElementById('sl-resource').value;
+
+  // Update display
+  document.getElementById('v-urgency').textContent = urgency;
+  document.getElementById('v-dependency').textContent = dependency;
+  document.getElementById('v-business').textContent = business;
+  document.getElementById('v-resource').textContent = resource;
+
+  // Calculate
+  const score = (urgency * 0.35) + (dependency * 0.30) + (business * 0.25) + (resource * 0.10);
+  const rounded = score.toFixed(2);
+
+  // Display score
+  const scoreEl = document.getElementById('npao-score');
+  scoreEl.textContent = rounded;
+
+  let color, tier, tierClass;
+  if (score >= 7) {
+    color = '#34d399'; tier = 'Immediate allocation'; tierClass = 'tier-immediate';
+  } else if (score >= 4) {
+    color = '#D4AF37'; tier = 'Queued — next available agent'; tierClass = 'tier-queued';
+  } else {
+    color = '#f87171'; tier = 'Async / backlog processing'; tierClass = 'tier-async';
+  }
+  scoreEl.style.color = color;
+  const tierEl = document.getElementById('npao-tier');
+  tierEl.textContent = tier;
+  tierEl.className = 'score-tier ' + tierClass;
+
+  // Breakdown
+  document.getElementById('npao-breakdown').innerHTML =
+`<span class="hl">Priority</span> = <span class="hl-b">(${urgency}</span><span class="hl-t"> × 0.35) + (</span><span class="hl-b">${dependency}</span><span class="hl-t"> × 0.30) + (</span><span class="hl-b">${business}</span><span class="hl-t"> × 0.25) + (</span><span class="hl-b">${resource}</span><span class="hl-t"> × 0.10)</span>
+      = <span class="hl-b">${(urgency*0.35).toFixed(2)}</span> + <span class="hl-b">${(dependency*0.30).toFixed(2)}</span> + <span class="hl-b">${(business*0.25).toFixed(2)}</span> + <span class="hl-b">${(resource*0.10).toFixed(2)}</span>
+      = <span class="hl" style="font-size:15px;">${rounded}</span> / 10.0`;
+
+  // Navigate output
+  const phaseNames = { prd:'Pre-Development (PreD)', design:'Design', dev:'Development', deploy:'Deployment', debug:'Debugging' };
+  const phaseGates = {
+    prd: 'Navigate classifies this as a PreD task. Primary question: "Is this worth building?" No code begins until PreD Report is signed off.',
+    design: 'Navigate classifies this as a Design task. Primary question: "What exactly are we building?" Spec and architecture must be approved before development.',
+    dev: 'Navigate classifies this as a Development task. Primary question: "Does it work?" Unit tests and code review gate the next phase.',
+    deploy: 'Navigate classifies this as a Deployment task. Primary question: "Is it safe to ship?" Staging QA and canary checks gate production.',
+    debug: 'Navigate classifies this as a DEBUGGING task. Priority override active — all non-critical work paused until root cause is identified and fixed.'
+  };
+  document.getElementById('npao-navigate').innerHTML =
+    `<strong style="color:var(--text);">Phase: ${phaseNames[selectedPhase]}</strong><br><br>${phaseGates[selectedPhase]}`;
+
+  // Allocate output
+  const agentMap = {
+    prd: 'Research Agent + Planning Agent',
+    design: 'Architect Agent + Design Agent',
+    dev: 'Builder Agent + Review Agent',
+    deploy: 'Deploy Agent + Canary Agent',
+    debug: 'Debug Agent (exclusive, priority override)'
+  };
+  const taskDesc = document.getElementById('npao-task').value || 'the described task';
+  document.getElementById('npao-allocate').innerHTML =
+    `<strong style="color:var(--text);">Recommended: ${agentMap[selectedPhase]}</strong><br><br>` +
+    `Capability match score: Context held for similar tasks (×0.50) + Specialization overlap (×0.35) + Current load factor (×0.15).<br><br>` +
+    `With score <strong style="color:${color};">${rounded}</strong> — ${tier.toLowerCase()}. ` +
+    (score >= 7 ? `Allocating immediately.` : score >= 4 ? `Adding to priority queue behind any score ≥7.0 tasks.` : `Scheduling for async background processing.`);
+}
+
+/* ══════════════════════════════════════════
+   RAG DAL PIPELINE
+══════════════════════════════════════════ */
+const ragData = {
+  music: {
+    query: 'What do independent musicians pay for music promotion tools today?',
+    topics: ['pricing tiers', 'market competitors', 'user sentiment', 'ROI perception'],
+    p1sources: [
+      {tier:1,label:'Spotify for Artists Blog'},{tier:2,label:'Billboard Industry Report'},
+      {tier:2,label:'Music Business Worldwide'},{tier:3,label:'Reddit r/WeAreTheMusicMakers'},
+      {tier:3,label:'Twitter #MusicPromotion'}
+    ],
+    p2sources: [
+      {tier:1,label:'SubmitHub Pricing Page'},{tier:2,label:'Groover.co Pricing'},
+      {tier:3,label:'Hacker News: music promo tools'}
+    ],
+    p3sources: [{tier:1,label:'Playlist Push Docs'},{tier:2,label:'Distrokid Knowledge Base'}],
+    confidences: [{topic:'Pricing tiers',val:92},{topic:'Market competitors',val:88},{topic:'User sentiment',val:76},{topic:'ROI perception',val:72}],
+    report: `# RAG DAL Report: Independent Musician Promotion Pricing
+
+Passes run: 3
+Overall confidence: 8.2/10
+Sources consulted: 10
+Date: 2026-04-13
+
+## Key Findings
+
+### Pricing Tiers
+Answer: Range from free credits to $0.50–$2.00 per playlist submission.
+Confidence: 9.2/10
+Primary sources: SubmitHub (direct), Groover.co (direct)
+
+### Market Competitors
+Answer: SubmitHub (~$0.50–$2/submit), Groover (€1.50–€3/submit),
+Playlist Push ($200–$1,800/campaign). Independent/free options growing.
+Confidence: 8.8/10
+Primary sources: Billboard, Music Business Worldwide
+
+### User Sentiment
+Answer: Price sensitivity high among indie artists. ROI is the top concern.
+Confidence: 7.6/10
+Primary sources: Reddit r/WeAreTheMusicMakers, Twitter threads
+
+## Open Questions (confidence < 7.0)
+None — all sub-topics resolved
+
+## Knowledge stored in:
+  project/{id}/knowledge-base/music-promotion-pricing`
+  },
+  eor: {
+    query: 'Global EOR market competitive landscape 2026',
+    topics: ['market size', 'key players', 'pricing', 'differentiation'],
+    p1sources: [
+      {tier:1,label:'Gartner EOR Report 2026'},{tier:2,label:'Forbes HR Tech'},
+      {tier:2,label:'G2 EOR Category'},{tier:3,label:'LinkedIn Posts: EOR buying'},
+      {tier:3,label:'Reddit r/remotework'}
+    ],
+    p2sources: [
+      {tier:1,label:'Deel S-1 Filing'},{tier:2,label:'Remote.com Press'},
+      {tier:2,label:'Rippling Blog'}
+    ],
+    p3sources: [{tier:1,label:'TrustPilot EOR Reviews'},{tier:2,label:'Bloomberg HRTech'}],
+    confidences: [{topic:'Market size',val:86},{topic:'Key players',val:94},{topic:'Pricing',val:78},{topic:'Differentiation',val:82}],
+    report: `# RAG DAL Report: Global EOR Market 2026
+
+Passes run: 3
+Overall confidence: 8.5/10
+Sources consulted: 10
+
+## Key Findings
+
+### Key Players
+Answer: Deel, Remote, Rippling, Atlas HXM, Oyster, Papaya Global
+Confidence: 9.4/10 — multiple Tier 1/2 sources confirm
+
+### Pricing
+Answer: $499–$699/employee/month for EOR. Deel/Remote at low end.
+Atlas HXM positioned as premium direct model.
+Confidence: 7.8/10 — pricing pages change frequently
+
+### Market Size
+Answer: $6.8B in 2025, projected $15B by 2028 (CAGR ~30%)
+Confidence: 8.6/10
+Primary source: Gartner EOR Report 2026
+
+## Knowledge stored in:
+  org/atlas-hxm/knowledge-base/competitive-eor`
+  },
+  agent: {
+    query: 'Multi-agent AI orchestration frameworks comparison',
+    topics: ['LangChain', 'CrewAI', 'AutoGPT', 'ROSTR', 'state management'],
+    p1sources: [
+      {tier:1,label:'arXiv: MetaGPT paper'},{tier:1,label:'arXiv: AutoGPT analysis'},
+      {tier:2,label:'TechCrunch: AI agents'},{tier:3,label:'HN: LangChain vs CrewAI'},
+      {tier:3,label:'Reddit r/MachineLearning'}
+    ],
+    p2sources: [
+      {tier:1,label:'LangChain GitHub docs'},{tier:2,label:'CrewAI documentation'},
+      {tier:3,label:'DEV.to: agent frameworks'}
+    ],
+    p3sources: [{tier:1,label:'ACL 2024: agent benchmarks'},{tier:2,label:'VentureBeat AI agents'}],
+    confidences: [{topic:'LangChain',val:94},{topic:'CrewAI',val:90},{topic:'AutoGPT',val:88},{topic:'ROSTR',val:85},{topic:'State mgmt',val:76}],
+    report: `# RAG DAL Report: Multi-Agent Orchestration Frameworks
+
+Passes run: 3
+Overall confidence: 8.7/10
+Sources consulted: 10
+
+## Key Findings
+
+### LangChain
+Answer: Most widely adopted. Tool chaining, no persistent cross-session state.
+Confidence: 9.4/10
+
+### CrewAI
+Answer: Role-based agent teams. Good DX, limited state persistence.
+Confidence: 9.0/10
+
+### ROSTR
+Answer: Novel. Phase-aware prioritization, persistent reference hub,
+PAL compilation layer. Not yet widely deployed.
+Confidence: 8.5/10 — primary source is the white paper itself
+
+## Open Questions
+- Empirical benchmarks vs. other frameworks: no data yet (future work)
+
+## Knowledge stored in:
+  project/{id}/knowledge-base/agent-frameworks`
+  }
+};
+
+function loadRagExample(val) {
+  if (!val) return;
+  const data = ragData[val] || ragData.music;
+  document.getElementById('ragdal-query').value = data.query;
+}
+
+async function runRAGDAL() {
+  let query = document.getElementById('ragdal-query').value.trim();
+  if (!query) return;
+
+  // Match to data
+  let key = 'music';
+  if (query.match(/eor|employer|global|atlas|deel|remote/i)) key = 'eor';
+  else if (query.match(/agent|langchain|crew|framework|orchestr/i)) key = 'agent';
+  else if (ragData[query]) key = query;
+
+  const d = ragData[key];
+
+  // Reset
+  document.getElementById('rag-status').textContent = 'Running...';
+  document.getElementById('rag-status').style.color = 'var(--gold)';
+  ['rag-p1','rag-p2','rag-p3'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('running','complete');
+  });
+  document.getElementById('rag-confidence-wrap').classList.add('hidden');
+  document.getElementById('rag-report-placeholder').style.display = 'block';
+  document.getElementById('rag-report-output').classList.add('hidden');
+  ['rag-p1-sources','rag-p2-sources','rag-p3-sources'].forEach(id => {
+    document.getElementById(id).innerHTML = '';
+  });
+  ['rag-p1-badge','rag-p2-badge','rag-p3-badge'].forEach(id => {
+    document.getElementById(id).textContent = '';
+  });
+  document.getElementById('rag-btn-label').textContent = 'Running Pass 1...';
+
+  // Pass 1
+  document.getElementById('rag-p1').classList.add('running');
+  await sleep(400);
+  const srcContainer1 = document.getElementById('rag-p1-sources');
+  for (const s of d.p1sources) {
+    await sleep(220);
+    const chip = document.createElement('div');
+    chip.className = 'rag-source';
+    chip.innerHTML = `<div class="tier-dot t${s.tier}"></div>${s.label} <span style="color:var(--text-muted);font-size:10px;">T${s.tier}</span>`;
+    srcContainer1.appendChild(chip);
+  }
+  document.getElementById('rag-p1-badge').textContent = `5 sources · avg confidence: 6.8/10`;
+  await sleep(400);
+
+  // Pass 2
+  document.getElementById('rag-btn-label').textContent = 'Running Pass 2 (gap fill)...';
+  document.getElementById('rag-p1').classList.remove('running');
+  document.getElementById('rag-p1').classList.add('complete');
+  document.getElementById('rag-p2').classList.add('running');
+  const srcContainer2 = document.getElementById('rag-p2-sources');
+  for (const s of d.p2sources) {
+    await sleep(280);
+    const chip = document.createElement('div');
+    chip.className = 'rag-source';
+    chip.innerHTML = `<div class="tier-dot t${s.tier}"></div>${s.label} <span style="color:var(--text-muted);font-size:10px;">T${s.tier}</span>`;
+    srcContainer2.appendChild(chip);
+  }
+  document.getElementById('rag-p2-badge').textContent = `3 sources · avg confidence: 7.9/10`;
+  await sleep(400);
+
+  // Pass 3
+  document.getElementById('rag-btn-label').textContent = 'Pass 3 (deep verify)...';
+  document.getElementById('rag-p2').classList.remove('running');
+  document.getElementById('rag-p2').classList.add('complete');
+  document.getElementById('rag-p3').classList.add('running');
+  const srcContainer3 = document.getElementById('rag-p3-sources');
+  for (const s of d.p3sources) {
+    await sleep(300);
+    const chip = document.createElement('div');
+    chip.className = 'rag-source';
+    chip.innerHTML = `<div class="tier-dot t${s.tier}"></div>${s.label} <span style="color:var(--text-muted);font-size:10px;">T${s.tier}</span>`;
+    srcContainer3.appendChild(chip);
+  }
+  document.getElementById('rag-p3-badge').textContent = `2 sources · threshold reached ✓`;
+  document.getElementById('rag-p3').classList.remove('running');
+  document.getElementById('rag-p3').classList.add('complete');
+
+  await sleep(300);
+
+  // Show confidence bars
+  const confWrap = document.getElementById('rag-confidence-wrap');
+  const confBars = document.getElementById('rag-confidence-bars');
+  confBars.innerHTML = '';
+  confWrap.classList.remove('hidden');
+
+  for (const c of d.confidences) {
+    const row = document.createElement('div');
+    row.className = 'rag-confidence';
+    const color = c.val >= 85 ? '#34d399' : c.val >= 70 ? '#D4AF37' : '#f87171';
+    row.innerHTML = `
+      <div class="conf-label">${c.topic}</div>
+      <div class="conf-bar"><div class="conf-fill" style="width:0%;background:${color}" data-target="${c.val}"></div></div>
+      <div class="conf-val">${c.val}%</div>`;
+    confBars.appendChild(row);
+  }
+
+  await sleep(100);
+  confWrap.querySelectorAll('.conf-fill').forEach(el => {
+    el.style.width = el.dataset.target + '%';
+  });
+
+  // Show report
+  await sleep(600);
+  document.getElementById('rag-report-placeholder').style.display = 'none';
+  document.getElementById('rag-report-output').textContent = d.report;
+  document.getElementById('rag-report-output').classList.remove('hidden');
+
+  document.getElementById('rag-status').textContent = '✓ Complete — stored in KB';
+  document.getElementById('rag-status').style.color = 'var(--green)';
+  document.getElementById('rag-btn-label').textContent = 'Run Retrieval Pipeline';
+}
+
+/* ══════════════════════════════════════════
+   FULL STACK WALKTHROUGH
+══════════════════════════════════════════ */
+const fsScenarios = {
+  pricing: {
+    input: 'We need to launch a pricing page for Artispreneur',
+    steps: [
+      {
+        title: 'PAL compiles the raw request',
+        body: `<strong style="color:var(--gold);">Raw:</strong> "We need to launch a pricing page for Artispreneur"<br><br>
+<strong>Extracted:</strong> ambiguity_score: 0.75 (missing: pricing tiers, design system, competitive context)<br>
+<strong>Phases detected:</strong> PreD → Design → Development → Deployment<br>
+<strong>Context injected:</strong> project/artispreneur/goals.md + org/identity + brand system`
+      },
+      {
+        title: 'NPAO builds the 5D task tree',
+        body: `<strong style="color:var(--gold);">Phase 0 — PreD:</strong><br>
+→ Task 1.0: Define pricing tiers [Planning Agent]<br>
+→ Task 1.1: Competitive analysis (RAG DAL) [Research Agent]<br>
+→ Task 1.2: Go/no-go ← GATE<br><br>
+<strong style="color:var(--gold);">Phase 1 — Design:</strong><br>
+→ Task 2.0: Wireframe [Design Agent]<br>
+→ Task 2.1: Copy + CTAs [Builder Agent]<br>
+→ Task 2.2: Design review ← GATE<br><br>
+<strong style="color:var(--gold);">Phase 2–3 — Dev + Deploy:</strong><br>
+→ Build component → QA → Staging → Canary`
+      },
+      {
+        title: 'RAG DAL researches for PreD Task 1.1',
+        body: `<strong>Query:</strong> "What do independent musicians pay for music promotion tools?"<br><br>
+<strong>Pass 1:</strong> 5 sources (Spotify for Artists, Billboard, Reddit)<br>
+<strong>Pass 2:</strong> SubmitHub, Groover.co pricing pages (gap fill)<br>
+<strong>Pass 3:</strong> Playlist Push docs (deep verify)<br><br>
+<strong>Output:</strong> Competitor pricing table (SubmitHub $0.50–$2/submit, Groover €1.50–€3) + user sentiment + positioning opportunity<br>
+<strong>Stored in:</strong> project/artispreneur/knowledge-base/pricing-research`
+      },
+      {
+        title: 'Agents execute in 5D phase order',
+        body: `<strong style="color:var(--gold);">PreD:</strong> Research Agent writes PreD report. Planning Agent: <em>Go ✓</em><br><br>
+<strong style="color:var(--gold);">Design:</strong> Design Agent builds wireframe. Builder Agent writes copy. Review Agent approves.<br><br>
+<strong style="color:var(--gold);">Development:</strong> Builder Agent codes component + Stripe integration. Code review passes. QA Agent: full checkout flow passes.<br><br>
+<strong style="color:var(--gold);">Deployment:</strong> Deploy Agent ships to staging. Visual QA passes. Production deploy. Canary: 5 min clean.`
+      },
+      {
+        title: 'Reference Hub compounds the knowledge',
+        body: `<strong style="color:var(--green);">Stored forever:</strong><br>
+→ Competitor pricing data → available to Sales, Copy, Strategy agents in all future sessions<br>
+→ Implementation pattern (Stripe component) → reusable across projects<br>
+→ QA findings → in learnings.jsonl<br>
+→ Decision: "3 tiers at $9/$29/$79" → in decisions.md<br><br>
+<strong>Next time anyone asks about pricing: the answer is already in the hub.</strong><br>
+<strong>Estimated cache hit rate after 3 similar tasks: ~55%</strong>`
+      }
+    ]
+  },
+  billing: {
+    input: 'Add Stripe subscription billing to our product',
+    steps: [
+      { title: 'PAL compiles the raw request', body: `<strong>Ambiguity score:</strong> 0.60 (missing: billing tiers, trial period, proration logic)<br><strong>Enhancement:</strong> Research Stripe API → Design billing tiers → Implement subscription flow → Test → Deploy with monitoring<br><strong>Context injected:</strong> project/architecture.md, existing payment patterns` },
+      { title: 'NPAO builds the task tree', body: `<strong style="color:var(--gold);">PreD:</strong> Research Stripe Subscription API, competitor billing models, define tiers ← GATE<br><strong style="color:var(--gold);">Design:</strong> Schema, UX flow, API contracts ← GATE<br><strong style="color:var(--gold);">Development:</strong> Webhook handlers, subscription UI, integration tests, code review ← GATE<br><strong style="color:var(--gold);">Deployment:</strong> Staging QA, canary monitoring<br><br><strong>Priority score: 3.35</strong> (high business value, no blockers → queued)` },
+      { title: 'RAG DAL researches Stripe patterns', body: `<strong>Pass 1:</strong> Stripe docs, Stripe webhooks guide, SaaS billing patterns<br><strong>Pass 2:</strong> Paddle comparison, webhook failure rates (found: 3–8% industry average)<br><strong>Pass 3:</strong> Stripe idempotency keys (critical finding → adds to KB)<br><br><strong>Key finding:</strong> Webhook delivery has a 3–8% failure rate — idempotency + retry required` },
+      { title: 'Agents execute in 5D phase order', body: `Research Agent writes Stripe integration spec. Architecture review: go ✓<br><br>Builder Agent: webhook handler + subscription UI + tests.<br>Code Review: passes.<br>QA Agent: full billing cycle — caught 5% failure rate in webhook testing (logged to learnings).<br><br>Deploy Agent: staging. Canary: clean.` },
+      { title: 'Reference Hub stores the knowledge', body: `→ Decision logged: "Chose Stripe over Paddle — flexibility on proration"<br>→ Learning logged: "Webhook delivery monitoring critical — 5% failure rate in testing"<br>→ Stripe integration pattern stored in project/knowledge-base<br><br>Any agent that needs Stripe info next time: reads from KB, no re-research.` }
+    ]
+  },
+  debug: {
+    input: 'Production bug: checkout flow broken',
+    steps: [
+      { title: 'PAL compiles — priority override activated', body: `<strong>Phase detected:</strong> DEBUGGING (P0)<br><strong>Priority override:</strong> true — preempts all queued tasks<br><strong>Enhancement:</strong> Reproduce → logs → root cause → fix → regression test → post-mortem<br><strong>Model escalation:</strong> claude-opus-4-6 (complexity warranted)` },
+      { title: 'NPAO: Debugging interrupts all phases', body: `<strong>Priority score: 9.2/10</strong> (Urgency 10 + Dependency 9 + Business 10 + Resource 8)<br><strong>→ Immediate allocation</strong><br><br>All non-critical tasks paused. Debug Agent allocated exclusively.<br>Orchestrator notifies all other agents of priority override.` },
+      { title: 'RAG DAL checks KB first (cache hit)', body: `<strong>Query:</strong> "Stripe webhook failure patterns, checkout flow debugging"<br><strong>Cache hit:</strong> Prior learning from billing implementation — "Webhook delivery monitoring critical"<br><strong>No new retrieval needed</strong> — KB answers the question.<br><br>Cache hit = 0 API calls, 0 wait time.` },
+      { title: 'Debug Agent: systematic investigation', body: `1. Reproduced: payment fails at webhook delivery<br>2. Server logs: Stripe webhook missing `idempotency-key` header<br>3. Root cause: deploy removed a required middleware<br>4. Fix: restore middleware, add idempotency handling<br>5. Regression test added for this exact failure<br>6. Post-mortem written: root cause, fix, prevention plan` },
+      { title: 'Hub stores the learnings', body: `→ Bug logged: "Missing idempotency-key middleware on checkout webhook"<br>→ Root cause pattern added to learnings.jsonl<br>→ Regression test referenced in decisions.md<br>→ Post-mortem at project/debugging/2026-04-13-checkout-fix.md<br><br>This class of webhook bug is now in the institutional memory.` }
+    ]
+  }
+};
+fsScenarios.rfp = {
+  input: 'Build an RFP response agent for the sales team',
+  steps: [
+    { title: 'PAL compiles into agent factory mode', body: `<strong>Mode:</strong> Agent Factory (detected: "build an agent")<br><strong>Extracted requirements:</strong> Parse RFP docs, answer questions from knowledge base, output formatted responses<br><strong>Context injected:</strong> org/atlas-hxm/icp.md, org/atlas-hxm/positioning.md, existing RFP knowledge base` },
+    { title: 'NPAO phases the build', body: `<strong>PreD:</strong> Audit existing RFP KB, define answer confidence levels, scope agent capabilities<br><strong>Design:</strong> KB schema, answer retrieval logic, confidence scoring, human review gates<br><strong>Development:</strong> Build RFP parser, KB search, response formatter<br><strong>Deployment:</strong> Integrate with HubSpot, test with live RFP` },
+    { title: 'RAG DAL builds the knowledge base', body: `<strong>Source:</strong> Existing RFP Q&A pairs from prior engagements<br><strong>Process:</strong> Parse → classify (Atlas General / Country-Specific) → assign fact owners → vectorize<br><strong>Output:</strong> Searchable KB with HIGH/MEDIUM/NO MATCH confidence per answer<br><strong>Stored in:</strong> org/atlas-hxm/knowledge-base/rfp-suite` },
+    { title: 'Agents build the RFP agent', body: `Builder Agent: RFP document parser (PDF/DOCX), semantic KB search, confidence scorer.<br>Review Agent: Validates answer quality against source docs.<br>QA Agent: Tests against 20 historical RFPs — 87% HIGH MATCH coverage.<br>Deploy Agent: Integrates with HubSpot for deal-attached RFP tracking.` },
+    { title: 'Hub enables reuse across all future RFPs', body: `→ Every RFP response stored in KB → future RFPs answer faster<br>→ LOW MATCH answers auto-create HubSpot tickets for fact owners<br>→ Coverage improves with every RFP processed<br>→ Estimated: 87% HIGH MATCH on first run → 95%+ after 20 RFPs` }
+  ]
+};
+fsScenarios.outreach = {
+  input: 'Build a personalized outreach system for the SDR team',
+  steps: [
+    { title: 'PAL compiles the request', body: `<strong>Domain:</strong> Sales ops + agent build<br><strong>Detected:</strong> Agent factory mode + system design<br><strong>Context injected:</strong> org/atlas-hxm/icp.md, approved messaging, SDR playbook` },
+    { title: 'NPAO designs the system', body: `<strong>PreD:</strong> Define ICP triggers, approved messaging, personalization variables<br><strong>Design:</strong> Enrichment pipeline, personalization engine, sequence logic, approval workflow<br><strong>Development:</strong> HubSpot integration, Clay enrichment, email draft engine<br><strong>Deployment:</strong> Connect to approved sending domain, test with 10 accounts` },
+    { title: 'RAG DAL enriches ICP knowledge', body: `<strong>Per target account:</strong> Company news, hiring trends, recent funding, tech stack<br><strong>Stored in:</strong> org/atlas-hxm/knowledge-base/account-{id}<br><strong>Reused:</strong> Every subsequent touch to the same account loads from KB, no re-search` },
+    { title: 'Outreach agent executes daily', body: `6:00 AM: Pull new accounts matching ICP triggers<br>6:05 AM: Enrich each account (KB first, RAG DAL for cache misses)<br>6:10 AM: Draft personalized email per account (PAL-enhanced)<br>6:15 AM: Queue drafts for SDR review<br>On approval: Log send + update HubSpot + track engagement` },
+    { title: 'Hub builds the outreach memory', body: `→ Every sent email stored → avoids duplicate outreach<br>→ Reply sentiment logged → improves future personalization<br>→ Winning message patterns learned over time<br>→ SDR notes merged into account profile in Hub` }
+  ]
+};
+
+function loadFsScenario(val) {
+  if (!val || !fsScenarios[val]) return;
+  document.getElementById('fs-input').value = fsScenarios[val].input;
+}
+
+async function runFullStack() {
+  const raw = document.getElementById('fs-input').value.trim();
+  if (!raw) return;
+
+  let key = 'pricing';
+  if (raw.match(/stripe|billing|subscription/i)) key = 'billing';
+  else if (raw.match(/debug|broken|bug|fix/i)) key = 'debug';
+  else if (raw.match(/rfp/i)) key = 'rfp';
+  else if (raw.match(/outreach|sdr|email|personali/i)) key = 'outreach';
+  else if (raw.match(/pricing/i)) key = 'pricing';
+
+  const s = fsScenarios[key];
+
+  // Reset all steps
+  for (let i = 1; i <= 5; i++) {
+    const card = document.getElementById('fs-step-' + i);
+    card.classList.remove('active', 'done');
+  }
+
+  document.getElementById('fs-btn-label').textContent = 'Running...';
+
+  for (let i = 1; i <= 5; i++) {
+    const card = document.getElementById('fs-step-' + i);
+    const body = document.getElementById('fs-body-' + i);
+    const step = s.steps[i - 1];
+
+    if (!step) break;
+
+    // Activate
+    card.classList.add('active');
+    card.querySelector('.step-title').textContent = step.title;
+    body.innerHTML = step.body;
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    await sleep(1400);
+
+    // Mark done
+    card.classList.remove('active');
+    card.classList.add('done');
+  }
+
+  document.getElementById('fs-btn-label').textContent = 'Run Full Stack';
+}
+
+/* ══════════════════════════════════════════
+   INIT
+══════════════════════════════════════════ */
+updateNPAO();
+</script>
+</body>
+</html>
