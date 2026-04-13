@@ -703,6 +703,55 @@ ol li::before {
   line-height: 1.6;
 }
 
+/* NPAO Origin Cards */
+.npao-origin-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+@media (max-width: 640px) { .npao-origin-grid { grid-template-columns: 1fr; } }
+
+.npao-card {
+  border-radius: 10px;
+  border: 1px solid;
+  padding: 20px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.npao-letter {
+  flex-shrink: 0;
+  width: 52px; height: 52px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  letter-spacing: -0.02em;
+}
+
+.npao-n { background: rgba(212,175,55,0.08); border-color: rgba(212,175,55,0.3); }
+.npao-p { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.25); }
+.npao-a { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.25); }
+.npao-o { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.25); }
+
+.npao-n .npao-letter { background: rgba(212,175,55,0.15); color: var(--gold); }
+.npao-p .npao-letter { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.npao-a .npao-letter { background: rgba(239,68,68,0.15); color: #f87171; }
+.npao-o .npao-letter { background: rgba(16,185,129,0.15); color: #34d399; }
+
+.npao-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.npao-trigger { font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 8px; }
+.npao-n .npao-trigger { color: var(--gold); }
+.npao-p .npao-trigger { color: #60a5fa; }
+.npao-a .npao-trigger { color: #f87171; }
+.npao-o .npao-trigger { color: #34d399; }
+.npao-def { font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 8px; }
+.npao-ex { font-size: 11.5px; color: var(--text-muted); font-style: italic; line-height: 1.5; }
+
 /* Footer */
 footer {
   border-top: 1px solid var(--border);
@@ -1209,6 +1258,54 @@ memory:
 <div class="section" id="s6">
   <div class="section-number">Section 6</div>
   <h2 class="section-title">NPAO: Navigate, Prioritize, Allocate, Orchestrate</h2>
+
+  <h3 class="subsection-title">6.0 Origin: The NPAO Framework</h3>
+  <p>NPAO was originally developed by Patrick Diamitani as a personal and professional task management framework. The acronym stands for <strong>Necessity, Priority, Anxiety, and Opportunity</strong> — a needs-based model for activating goals faster by aligning actions to what matters most.</p>
+
+  <div class="npao-origin-grid">
+    <div class="npao-card npao-n">
+      <div class="npao-letter">N</div>
+      <div class="npao-content">
+        <div class="npao-name">Necessity</div>
+        <div class="npao-trigger">I MUST</div>
+        <div class="npao-def">An essential function without which no following tasks can be completed.</div>
+        <div class="npao-ex">"I must develop a business plan to organize this idea."</div>
+      </div>
+    </div>
+    <div class="npao-card npao-p">
+      <div class="npao-letter">P</div>
+      <div class="npao-content">
+        <div class="npao-name">Priority</div>
+        <div class="npao-trigger">I NEED</div>
+        <div class="npao-def">Important to accomplishing your stated mission, even if not strictly blocking.</div>
+        <div class="npao-ex">"I need to hire a marketer to launch our product."</div>
+      </div>
+    </div>
+    <div class="npao-card npao-a">
+      <div class="npao-letter">A</div>
+      <div class="npao-content">
+        <div class="npao-name">Anxiety</div>
+        <div class="npao-trigger">I WON'T HAVE PEACE UNTIL</div>
+        <div class="npao-def">A task that keeps surfacing and consuming cognitive energy until resolved.</div>
+        <div class="npao-ex">"I won't have peace until I finish the backlog projects in my portfolio."</div>
+      </div>
+    </div>
+    <div class="npao-card npao-o">
+      <div class="npao-letter">O</div>
+      <div class="npao-content">
+        <div class="npao-name">Opportunity</div>
+        <div class="npao-trigger">I CAN</div>
+        <div class="npao-def">Completing this task unlocks new growth — additive, not defensive.</div>
+        <div class="npao-ex">"I can prospect 500 additional leads this week to get closer to quota."</div>
+      </div>
+    </div>
+  </div>
+
+  <p>In the ROSTR architecture, these four dimensions are adapted for multi-agent orchestration. <strong>Navigate</strong> maps to Necessity — classify what the system <em>must</em> resolve first. <strong>Prioritize</strong> maps to Priority — rank tasks by mission impact. <strong>Allocate</strong> maps to Anxiety — surface and resolve blocking dependencies before they compound. <strong>Orchestrate</strong> maps to Opportunity — structure execution to capture maximum value from each completed unit of work.</p>
+
+  <div class="callout">
+    The framework was designed by Patrick Diamitani as an organizational model to help people activate goals faster by prioritizing the most pressing needs and aligning actions toward effective execution — a mental model that translates directly to autonomous agent workflows.
+  </div>
 
   <div id="s6-1">
   <h3 class="subsection-title">6.1 Design Rationale</h3>
