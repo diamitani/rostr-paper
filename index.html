@@ -213,9 +213,13 @@ body {
 
 .author-block { margin-bottom: 28px; }
 .author-name { font-size: 16px; font-weight: 600; color: var(--text); }
-.author-meta { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.author-meta { font-size: 13px; color: var(--text-secondary); margin-top: 6px; line-height: 1.6; }
 .author-meta a { color: var(--gold); text-decoration: none; }
 .author-meta a:hover { text-decoration: underline; }
+.author-links { font-size: 13px; color: var(--text-secondary); margin-top: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.author-links a { color: var(--gold); text-decoration: none; }
+.author-links a:hover { text-decoration: underline; }
+.author-sep { color: var(--text-muted); }
 
 .paper-date {
   display: inline-block;
@@ -796,7 +800,14 @@ footer {
 
   <div class="author-block">
     <div class="author-name">Patrick Diamitani</div>
-    <div class="author-meta">Independent Researcher · <a href="mailto:patrick@diamitani.com">patrick@diamitani.com</a></div>
+    <div class="author-meta">
+      GTM AI &amp; Automation Manager at <a href="https://atlashxm.com" target="_blank">Atlas HXM</a> — building agents, skills, and automations for sales, marketing, and operations teams. Previously AI engineer and consultant; prior career in tech sales across SMB, mid-market, and enterprise.
+    </div>
+    <div class="author-links">
+      <a href="mailto:patrick.diamitani@gmail.com">patrick.diamitani@gmail.com</a>
+      <span class="author-sep">·</span>
+      <a href="https://www.linkedin.com/in/diamitani" target="_blank">linkedin.com/in/diamitani</a>
+    </div>
   </div>
 
   <div class="paper-date">April 2026</div>
