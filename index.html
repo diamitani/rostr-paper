@@ -870,18 +870,29 @@ footer {
     <a href="#s4" class="toc-link">4. PAL</a>
     <a href="#s4-1" class="toc-link sub">4.1 Design Rationale</a>
     <a href="#s4-2" class="toc-link sub">4.2 Pipeline (5 Stages)</a>
+    <a href="#s4-3" class="toc-link sub">4.3 Intent Examples</a>
+    <a href="#s4-4" class="toc-link sub">4.4 Operating Modes</a>
+    <a href="#s4-5" class="toc-link sub">4.5 Agent Factory</a>
+    <a href="#s4-6" class="toc-link sub">4.6 Deployment Paths</a>
     <a href="#s5" class="toc-link">5. RAG DAL</a>
     <a href="#s5-1" class="toc-link sub">5.1 Design Rationale</a>
     <a href="#s5-2" class="toc-link sub">5.2 Three-Tier Sources</a>
     <a href="#s5-3" class="toc-link sub">5.3 Multi-Pass Loop</a>
+    <a href="#s5-5" class="toc-link sub">5.5 Operating Modes</a>
+    <a href="#s5-6" class="toc-link sub">5.6 Compliance</a>
     <a href="#s6" class="toc-link">6. NPAO</a>
     <a href="#s6-1" class="toc-link sub">6.1 Design Rationale</a>
     <a href="#s6-2" class="toc-link sub">6.2 5D Phase Taxonomy</a>
     <a href="#s6-3" class="toc-link sub">6.3 Priority Scoring</a>
+    <a href="#s6-6" class="toc-link sub">6.6 Phase Completion Criteria</a>
+    <a href="#s6-7" class="toc-link sub">6.7 Configuration</a>
+    <a href="#s6-9" class="toc-link sub">6.9 vs. Competing Approaches</a>
     <a href="#s7" class="toc-link">7. Rostr Hub</a>
     <a href="#s7-1" class="toc-link sub">7.1 Design Rationale</a>
     <a href="#s7-2" class="toc-link sub">7.2 Reference Hub</a>
-    <a href="#s7-3" class="toc-link sub">7.3 Agent Registry</a>
+    <a href="#s7-3" class="toc-link sub">7.3 Agent Library (13)</a>
+    <a href="#s7-6b" class="toc-link sub">7.7 Modular Architecture</a>
+    <a href="#s7-6c" class="toc-link sub">7.8 Dashboard</a>
     <a href="#s8" class="toc-link">8. System Integration</a>
     <a href="#s9" class="toc-link">9. Validation Framework</a>
     <a href="#s10" class="toc-link">10. Discussion</a>
@@ -1017,8 +1028,11 @@ footer {
         <tr><td>CrewAI</td><td>Role definitions</td><td>External RAG</td><td>Role-based delegation</td><td>Limited</td><td>Yes</td></tr>
         <tr><td>AutoGPT</td><td>Self-generated</td><td>Web search (no credibility)</td><td>Autonomous (no priority)</td><td>None</td><td>Yes</td></tr>
         <tr><td>MetaGPT</td><td>Role-based prompts</td><td>External RAG</td><td>SOP-based</td><td>Artifact-based</td><td>Yes</td></tr>
+        <tr><td>Dify</td><td>Visual workflow nodes</td><td>External RAG</td><td>Visual workflow</td><td>Limited</td><td>Yes</td></tr>
+        <tr><td>n8n</td><td>—</td><td>External RAG</td><td>Automation workflows</td><td>Node state only</td><td>Yes</td></tr>
+        <tr><td>Flowise</td><td>—</td><td>Standard RAG</td><td>Visual chains</td><td>None</td><td>Yes</td></tr>
         <tr><td>Bee Framework</td><td>—</td><td>Standard RAG</td><td>Built-in orchestration</td><td>Unknown</td><td>No</td></tr>
-        <tr><td><strong>ROSTR</strong></td><td><strong>PAL 5-stage compilation</strong></td><td><strong>RAG DAL 3-tier multi-pass</strong></td><td><strong>NPAO 5D + 4D scoring</strong></td><td><strong>4-level multi-namespace</strong></td><td><strong>Yes (planned)</strong></td></tr>
+        <tr><td><strong>ROSTR</strong></td><td><strong>PAL 5-stage compilation</strong></td><td><strong>RAG DAL 3-tier multi-pass</strong></td><td><strong>NPAO 5D + 4D scoring</strong></td><td><strong>4-level multi-namespace</strong></td><td><strong>Yes (MIT)</strong></td></tr>
       </tbody>
     </table>
   </div>
@@ -1213,7 +1227,88 @@ memory:
   <p>Deterministic keyword-based routing with LLM fallback for ambiguous cases. Tasks containing "research/analyze/investigate" route to NPAO PreD phase; "build/implement/code" to Development; "bug/fix/error" to Debugging with priority override.</p>
   </div>
 
-  <h3 class="subsection-title">4.3 Technical Specifications</h3>
+  <div id="s4-3">
+  <h3 class="subsection-title">4.3 Intent Extraction Examples</h3>
+  <p>PAL extracts structured intent regardless of input quality. Typos, fragments, and casual language are all valid. The table below shows raw inputs and their extracted equivalents:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Raw Input</th><th>Extracted Intent</th></tr></thead>
+      <tbody>
+        <tr><td><code>"fix the thing"</code></td><td>Debug primary bug in active file; root cause before fix; report-only mode off</td></tr>
+        <tr><td><code>"write email to that fintech guy"</code></td><td>Draft cold outreach email; B2B tone; fintech ICP; under 150 words; clear CTA</td></tr>
+        <tr><td><code>"ship it"</code></td><td>Deploy active branch; run pre-flight checks; create PR; verify on production</td></tr>
+        <tr><td><code>"does this look right"</code></td><td>Visual QA of most recent UI change; design-eye review; flag inconsistencies</td></tr>
+        <tr><td><code>"make the landing page better"</code></td><td>Audit against 5 conversion dimensions (headline, CTA, social proof, load time, mobile); score 0–10; implement highest-impact fix; commit each fix separately</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>The enhancement from "make the landing page better" to a 5-dimension audit with scoring and commit-level fixes illustrates the core value: what the user needs is almost always more specific than what they say. PAL bridges that gap without requiring the user to learn prompt engineering.</p>
+  </div>
+
+  <div id="s4-4">
+  <h3 class="subsection-title">4.4 PAL Operating Modes</h3>
+  <p>PAL supports four modes that can be selected per-session or per-task:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Mode</th><th>Behavior</th><th>Use Case</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Transparent (default)</strong></td><td>PAL runs invisibly. User sees only the output of the compiled instruction. No evidence of enhancement.</td><td>Production use; all standard interactions</td></tr>
+        <tr><td><strong>Visible (debug)</strong></td><td>PAL surfaces its extracted intent, context loaded, and enhancement made before executing. Allows inspection of compilation decisions.</td><td>Debugging unexpected outputs; tuning enhancement rules</td></tr>
+        <tr><td><strong>Manual Override</strong></td><td>User provides a fully-formed prompt. PAL still handles routing and context injection but does not modify the prompt body.</td><td>Expert users; locked-down prompt testing</td></tr>
+        <tr><td><strong>Batch Compilation</strong></td><td>PAL compiles a queue of instructions simultaneously. Multiple agents spun up in parallel with separate compiled manifests.</td><td>Orchestration pipelines; parallel Phase fan-out</td></tr>
+      </tbody>
+    </table>
+  </div>
+  </div>
+
+  <div id="s4-5">
+  <h3 class="subsection-title">4.5 PAL as Agent Factory</h3>
+  <p>In the Rostr framework, PAL plays a second role beyond runtime message compilation: it compiles agent definitions themselves. When a user describes a new agent in natural language, PAL extracts its requirements, infers the necessary tools, generates the agent specification, creates its manifest, and registers it with the hub.</p>
+
+  <pre><span class="code-label">AGENT FACTORY — INPUT</span><code>User: "I need an agent that monitors our HubSpot daily and drafts
+       personalized follow-up emails for deals that haven't moved in 7 days"</code></pre>
+
+  <pre><span class="code-label">AGENT FACTORY — OUTPUT (PAL compiled)</span><code>Agent Spec: "Pipeline Mover Agent"
+  triggers: daily at 9:00 AM
+  tools: [hubspot_api, claude_api, email_draft]
+  workflow:
+    1. Query HubSpot for deals with last_activity > 7 days
+    2. For each deal: pull contact info + deal history
+    3. Draft personalized follow-up email (PAL-enhanced per deal)
+    4. Present drafts queue for human approval
+    5. On approval: update HubSpot + send via configured channel
+  stores: results in org/knowledge-base/pipeline-health
+  memory_mode: project</code></pre>
+
+  <p>PAL as agent factory makes building new agents a natural language operation. No YAML required. No tool configuration required. The user describes the outcome, PAL generates the agent.</p>
+  </div>
+
+  <div id="s4-6">
+  <h3 class="subsection-title">4.6 Deployment Paths</h3>
+  <p>PAL can be deployed in four ways with different setup requirements and tradeoffs:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Path</th><th>Setup</th><th>Latency</th><th>Cost</th></tr></thead>
+      <tbody>
+        <tr><td><strong>CLAUDE.md Section</strong></td><td>Zero — paste PAL protocol into CLAUDE.md; Claude Code loads on every session</td><td>0ms overhead (in-context)</td><td>$0 (model context cost only)</td></tr>
+        <tr><td><strong>Claude Code Skill</strong></td><td>~5 minutes — register pal.skill; triggers on every message automatically</td><td>~50ms</td><td>~$0.0005/compile</td></tr>
+        <tr><td><strong>Chrome Extension</strong></td><td>~10 minutes — intercepts keystroke on claude.ai, ChatGPT, Gemini; shows before/after diff badge</td><td>~300ms</td><td>~$0.001/compile</td></tr>
+        <tr><td><strong>API Middleware</strong></td><td>~30 minutes — FastAPI wrapper; integrate into any agent pipeline via SDK</td><td>200–400ms</td><td>~$0.001/compile</td></tr>
+      </tbody>
+    </table>
+  </div>
+  </div>
+
+  <div id="s4-7">
+  <h3 class="subsection-title">4.7 Open Source Implementation</h3>
+  <p>PAL is released as an open source framework at <strong>github.com/rostr-ai/pal</strong> (MIT license). Community-contributed enhancement templates are accepted by domain — sales, engineering, legal, design, medical — allowing PAL to develop specialized compilation rules for any vertical without core framework changes.</p>
+  </div>
+
+  <h3 class="subsection-title">4.8 Technical Specifications</h3>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Property</th><th>Value</th></tr></thead>
@@ -1292,7 +1387,53 @@ memory:
   <h3 class="subsection-title">5.4 Knowledge Base Ingestion</h3>
   <p>Retrieved content is transformed into structured entries with UUID, query origin, content, summary, source metadata (URL, tier, credibility score, published/retrieved dates), topic tags, named entities, vector embedding, confidence score, and verification status. Entries are chunked at 512 tokens with 64-token overlap, embedded with text-embedding-3-small, and stored in pgvector/Pinecone/Weaviate organized by namespace (project/org/team/domain/global).</p>
 
-  <h3 class="subsection-title">5.5 Technical Specifications</h3>
+  <div id="s5-5">
+  <h3 class="subsection-title">5.5 Three Operating Modes</h3>
+  <p>RAG DAL supports three retrieval modes optimized for different use cases. Mode is selected per-query based on the intent extracted by PAL, or set explicitly by the requesting agent.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Mode</th><th>Source Priority</th><th>Behavior</th><th>Best For</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Academic Research</strong></td><td>Tier 1 only for first 2 passes</td><td>Prioritizes arXiv, PubMed, university repositories; outputs citations in academic format; flags any Tier 3 sources used</td><td>Literature reviews, technical deep dives, evidence-based claims</td></tr>
+        <tr><td><strong>News &amp; Trend Sentinel</strong></td><td>Tier 2–3, recency-weighted</td><td>Flags bias or single-source claims; validates across minimum 3 news outlets; highlights recency of each source</td><td>Competitive intelligence, market research, current events tracking</td></tr>
+        <tr><td><strong>General Knowledge Expansion</strong></td><td>Full spectrum, Tier 1 first</td><td>Builds the most comprehensive corpus; starts encyclopedic, expands outward; maximum coverage over precision</td><td>Building agent knowledge bases, profile building, domain onboarding</td></tr>
+      </tbody>
+    </table>
+  </div>
+  </div>
+
+  <div id="s5-6">
+  <h3 class="subsection-title">5.6 Compliance and Ethics</h3>
+  <p>RAG DAL enforces responsible retrieval practices by design, not policy:</p>
+  <ul>
+    <li><strong>robots.txt compliance:</strong> Never crawls disallowed paths; checks on every URL before fetch</li>
+    <li><strong>Rate limiting:</strong> Respects source rate limits; exponential backoff with jitter; source-specific delay profiles</li>
+    <li><strong>Copyright:</strong> Stores summaries and excerpts, not full reproduced text; attributes all content to original source</li>
+    <li><strong>No hallucination:</strong> All outputs linked to original source; cannot generate factual claims without citation</li>
+    <li><strong>Bias detection:</strong> Multi-source cross-reference prevents single-source bias; contradictions between tiers are surfaced, not silently resolved</li>
+    <li><strong>Misinformation flagging:</strong> Claims that appear in only one source, or that contradict Tier 1 sources, are flagged UNCERTAIN in the output</li>
+    <li><strong>Privacy:</strong> User queries are never sent to third-party services without explicit consent; local processing by default</li>
+  </ul>
+  </div>
+
+  <div id="s5-7">
+  <h3 class="subsection-title">5.7 Knowledge Compounding in Practice</h3>
+  <p>RAG DAL's shared knowledge base architecture means the same research never needs to be run twice within a project scope. When the Research Agent discovers competitor pricing data in a PreD task, that knowledge is stored in the project namespace and immediately available to the Copywriting Agent, the Sales Agent, and the Strategy Agent — without each one running its own search.</p>
+
+  <div class="callout">
+    "The pricing research from Task 1.1 is now available for the copywriting agent, the sales agent, and every future session. Next time someone asks about pricing — the answer is already in the hub." — Rostr Framework Combined Whitepaper v1.0
+  </div>
+
+  <p>Knowledge compounding is measured by cache hit rate: the percentage of knowledge queries served from the project KB without triggering a new retrieval pipeline. Mature projects with active knowledge bases typically achieve 40–60% cache hit rates, reducing RAG DAL pipeline calls by the same proportion.</p>
+  </div>
+
+  <div id="s5-8">
+  <h3 class="subsection-title">5.8 Open Source Implementation</h3>
+  <p>RAG DAL is released at <strong>github.com/rostr-ai/rag-dal</strong> (MIT license) with six core components: <code>ragdal-core/</code> (pipeline orchestration), <code>ragdal-search/</code> (search execution and tier management), <code>ragdal-extract/</code> (content extraction and normalization), <code>ragdal-kb/</code> (knowledge base storage and retrieval), <code>ragdal-api/</code> (FastAPI service wrapper), and <code>ragdal-sdk/</code> (Python + JS integration SDK).</p>
+  </div>
+
+  <h3 class="subsection-title">5.9 Technical Specifications</h3>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Property</th><th>Value</th></tr></thead>
@@ -1595,7 +1736,20 @@ memory:
 
   <div id="s7-1">
   <h3 class="subsection-title">7.1 Design Rationale</h3>
-  <p>Agent teams need persistent state across sessions, shared knowledge across agents, an agent registry for discovery and capability matching, and communication protocols for coordination. Rostr Hub provides this infrastructure as a central platform all agents attach to.</p>
+  <p>Agent teams fail for four structural reasons: agent isolation (stateless agents that can't build on each other's work), context loss across sessions (re-briefing AI on context it should already have), no composition standard (bespoke integration for every agent pair), and no shared knowledge hub (every agent re-discovers information that was already found). Rostr Hub provides the platform that fixes all four simultaneously.</p>
+
+  <h4>The City Mental Model</h4>
+  <p>Rostr Hub is most clearly understood as a city for agents:</p>
+  <ul>
+    <li><strong>Districts</strong> are project, org, or team namespaces — separate spaces with their own rules and resources</li>
+    <li><strong>Buildings</strong> are agents — specialized workers that live in the city and do specific jobs</li>
+    <li><strong>Roads</strong> are communication protocols — how agents send work to each other</li>
+    <li><strong>The library</strong> is the knowledge base — shared information any agent can access</li>
+    <li><strong>City Hall</strong> is the orchestrator — NPAO running inside Rostr, managing what gets done when</li>
+    <li><strong>The post office</strong> is the message bus — async communication between agents</li>
+    <li><strong>The registry</strong> is the agent directory — what agents exist, what they can do, how to reach them</li>
+  </ul>
+  <p>You can build a town (solo project), a city (startup), or a metropolis (enterprise). Same infrastructure, different scale.</p>
   </div>
 
   <div id="s7-2">
@@ -1629,6 +1783,13 @@ memory:
   </div>
 
   <div id="s7-3">
+  <div id="s7-3b">
+  <h3 class="subsection-title">7.2b Reference Hub Access Patterns</h3>
+  <p><strong>Read access:</strong> Any agent can read from its attached namespaces (project, org, team, global). Context is injected automatically by PAL at compile time — agents receive relevant prior decisions and learnings without making explicit KB queries.</p>
+  <p><strong>Write access:</strong> Agents write to the Reference Hub after completing tasks. Learnings, decisions, discoveries, and artifacts are stored automatically per the state persistence protocol.</p>
+  <p><strong>Cross-namespace access:</strong> With permission, agents can query across projects — an agent working on Project B can retrieve competitor pricing research that was done in Project A, without triggering a new RAG DAL pipeline run.</p>
+  </div>
+
   <h3 class="subsection-title">7.3 Agent Registration Schema</h3>
   <pre><span class="code-label">JSON</span><code>{
   "agent_id": "uuid-v4",
@@ -1646,6 +1807,56 @@ memory:
   }
 }</code></pre>
 
+  <div id="s7-3b2">
+  <h3 class="subsection-title">7.3b Built-in Agent Library</h3>
+  <p>Rostr ships with thirteen pre-built standard agents covering the full 5D lifecycle. Teams deploy these immediately and extend with custom agents for domain-specific needs.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Agent</th><th>Phase</th><th>Primary Capability</th></tr></thead>
+      <tbody>
+        <tr><td>PAL Agent</td><td>All</td><td>Intent compilation and routing for all incoming requests</td></tr>
+        <tr><td>Research Agent</td><td>PreD</td><td>RAG DAL-powered multi-pass deep research</td></tr>
+        <tr><td>Planning Agent</td><td>PreD / Design</td><td>PreD reports, feature specs, go/no-go decisions</td></tr>
+        <tr><td>Architect Agent</td><td>Design</td><td>System design, architecture review, data model</td></tr>
+        <tr><td>Builder Agent</td><td>Development</td><td>Code generation, file editing, API integration</td></tr>
+        <tr><td>Review Agent</td><td>Development</td><td>Code review, quality gates, diff analysis</td></tr>
+        <tr><td>QA Agent</td><td>Development / Deployment</td><td>Test execution, bug finding, regression detection</td></tr>
+        <tr><td>Design Agent</td><td>Design</td><td>UI/UX generation, visual design, component systems</td></tr>
+        <tr><td>Deploy Agent</td><td>Deployment</td><td>Ship workflow, CI/CD orchestration, monitoring setup</td></tr>
+        <tr><td>Canary Agent</td><td>Deployment</td><td>Post-deploy health monitoring, performance regression</td></tr>
+        <tr><td>Debug Agent</td><td>Debugging</td><td>Root cause analysis, systematic investigation</td></tr>
+        <tr><td>Retro Agent</td><td>All</td><td>Weekly retrospectives, learnings extraction, trend analysis</td></tr>
+        <tr><td>Orchestrator</td><td>All</td><td>NPAO task routing, priority management, handoff coordination</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Custom Agent Creation</h4>
+  <p>Users build custom agents using PAL's agent factory mode. The entire spec — tools, triggers, workflow, storage targets — is generated from a natural language description.</p>
+
+  <pre><span class="code-label">CUSTOM AGENT — NATURAL LANGUAGE INPUT</span><code>User: "I need an agent that monitors our HubSpot daily and
+drafts personalized follow-up emails for deals that haven't moved in 7 days"</code></pre>
+
+  <pre><span class="code-label">CUSTOM AGENT — PAL GENERATED SPEC</span><code>name: "Pipeline Mover Agent"
+type: specialist
+triggers: [cron: "0 9 * * *"]
+tools: [hubspot_api, ragdal, email_draft]
+phases: [all]
+workflow:
+  - step: query_stale_deals
+    action: hubspot_api.query(last_activity_gt_days=7, stage=active)
+  - step: enrich_each_deal
+    action: ragdal.lookup(deal.company, namespace="org/knowledge-base")
+  - step: draft_followup
+    action: pal.compile("personalized follow-up for {deal}", context={deal, enrichment})
+  - step: human_approval_queue
+    action: present_drafts(require_approval=true)
+  - step: send_approved
+    action: hubspot_api.update(deal) + email.send(draft)
+stores: results in org/knowledge-base/pipeline-health</code></pre>
+  </div>
+
   <h3 class="subsection-title">7.4 Four-Level State Management</h3>
   <div class="table-wrap">
     <table>
@@ -1662,7 +1873,59 @@ memory:
   <h3 class="subsection-title">7.5 Communication Protocols</h3>
   <p>Agents communicate through three channels: <strong>Synchronous Task Assignment</strong> (orchestrator → agent direct JSON payload with task, context, deadline, and on_complete handler); <strong>Asynchronous Message Bus</strong> (Pub/Sub via Redis for non-blocking event notifications like "deployment_complete"); and <strong>Knowledge Queries</strong> (agents query the Reference Hub directly via vector search + metadata filtering).</p>
 
-  <h3 class="subsection-title">7.6 Technical Stack</h3>
+  <div id="s7-6a">
+  <h3 class="subsection-title">7.6 Reference Hub Patterns</h3>
+  <p>The hub architecture is structurally neutral — the same technology supports configurations from a single developer to an enterprise with 50+ agents. Four primary patterns cover the most common deployment shapes:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Pattern</th><th>Hub Config</th><th>Use Case</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Project Hub</strong></td><td>One project namespace, 2–5 agents, local or Supabase storage</td><td>Solo developer, indie project, single-product startup</td></tr>
+        <tr><td><strong>Org Hub</strong></td><td>Org namespace + multiple project namespaces; shared ICP, messaging, playbooks across all agents</td><td>SMB with multiple products; sales ops team; GTM automation</td></tr>
+        <tr><td><strong>Team Hub</strong></td><td>Team namespace with approved messaging, agent conventions, shared playbooks; agents auto-load team context</td><td>Enterprise department; SDR/AE team; engineering squad</td></tr>
+        <tr><td><strong>Day Hub</strong></td><td>A daily namespace (days/YYYY-MM-DD/) with goals, context, NPAO-managed task list; planning agent builds it each morning, retro agent closes it each evening</td><td>Personal productivity; executive daily operations</td></tr>
+      </tbody>
+    </table>
+  </div>
+  </div>
+
+  <div id="s7-6b">
+  <h3 class="subsection-title">7.7 Modular Architecture</h3>
+  <p>Every Rostr component is a module that can be replaced, extended, or removed. Three modules are required; the rest are optional based on team needs:</p>
+
+  <pre><span class="code-label">MODULE TREE</span><code>rostr-hub/              ← Core hub infrastructure (REQUIRED)
+├── rostr-agents/       ← Agent registry and management (REQUIRED)
+├── rostr-state/        ← State persistence layer (REQUIRED)
+├── rostr-npao/         ← NPAO orchestration module (optional)
+├── rostr-pal/          ← PAL compilation module (optional)
+├── rostr-ragdal/       ← RAG DAL retrieval module (optional)
+├── rostr-dashboard/    ← Web UI for monitoring (optional)
+├── rostr-api/          ← REST/WebSocket API (optional)
+└── rostr-sdk/          ← Python + JS integration SDK (optional)</code></pre>
+  </div>
+
+  <div id="s7-6c">
+  <h3 class="subsection-title">7.8 Rostr Dashboard</h3>
+  <p>The dashboard is the control room for the agent team. Six views provide full operational visibility:</p>
+  <ul>
+    <li><strong>Mission Control:</strong> Real-time view of all active agents, current tasks, and their status. Running / idle / error state per agent.</li>
+    <li><strong>Task Board:</strong> NPAO priority queue with phase, composite score, assignment status, and estimated completion time.</li>
+    <li><strong>Knowledge Base:</strong> Browse and search the Reference Hub. Filter by namespace, topic, tier, or confidence score.</li>
+    <li><strong>Agent Registry:</strong> View and manage registered agents — capabilities, current load, performance statistics, and health status.</li>
+    <li><strong>Timeline:</strong> Full chronological history of all agent actions, decisions, outputs, and state changes.</li>
+    <li><strong>Analytics:</strong> Agent performance trends, task completion rates, cost per task by agent type, knowledge cache hit rate, RAG DAL coverage metrics.</li>
+  </ul>
+  </div>
+
+  <div id="s7-6d">
+  <h3 class="subsection-title">7.9 Open Source Implementation</h3>
+  <p>Rostr Hub is released at <strong>github.com/rostr-ai/rostr</strong> (MIT license). The hosted version at rostr.ai provides managed hub infrastructure, agent marketplace with 1-click install, and team collaboration features. Pricing: Free tier (1 project, 5 agents, 1,000 tasks/month), Pro tier ($49/month, unlimited projects and 20 agents), Enterprise (custom pricing, dedicated infrastructure).</p>
+
+  <p>The open source strategy is intentional: proprietary agent frameworks create lock-in at the most critical infrastructure layer. If your agent system depends on a closed platform, you can't inspect how it makes decisions, can't modify it for your needs, and can't contribute improvements back. Agent infrastructure should be a commons — owned by the community, improved by everyone, trusted by all.</p>
+  </div>
+
+  <h3 class="subsection-title">7.10 Technical Stack</h3>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Component</th><th>Technology</th><th>Rationale</th></tr></thead>
@@ -1685,16 +1948,52 @@ memory:
   <div class="section-number">Section 8</div>
   <h2 class="section-title">System Integration and Reference Implementation</h2>
 
-  <h3 class="subsection-title">8.1 Integration Flow</h3>
-  <p>Consider a request: <em>"We need to add Stripe subscription billing to our product."</em></p>
+  <h3 class="subsection-title">8.1 End-to-End Integration Walkthrough</h3>
+  <p>Consider a product request: <em>"We need to launch a pricing page for Artispreneur."</em> This traces the full framework from raw input to shipped feature.</p>
 
-  <p><strong>PAL Compilation:</strong> Ambiguity score 0.6 (missing billing tiers, trial period, proration). Enhancement decomposes into: Research Stripe Subscription API → Design billing tiers → Implement subscription flow → Test full billing cycle → Deploy with monitoring.</p>
+  <p><strong>Step 1 — PAL intercepts and classifies:</strong> Ambiguity score 0.75 (missing pricing tiers, design system reference, competitive context). PAL detects multiple implicit phases and decomposes the request before passing to NPAO.</p>
 
-  <p><strong>NPAO Phase Decomposition:</strong> PreD tasks (research Stripe API, analyze competitor billing models, define billing tiers) → Design tasks (schema, UX flow, API contracts) → Development tasks (webhook handlers, subscription UI, integration tests, code review) → Deployment tasks (staging QA, production deploy, canary monitoring).</p>
+  <pre><span class="code-label">PAL EXTRACTED INTENT</span><code>{
+  "primary_intent": "create and ship a pricing page",
+  "domain": "product + code",
+  "phases_detected": ["prd", "design", "development", "deployment"],
+  "pre_work_needed": true,
+  "context_needed": ["current_pricing_tiers", "competitive_landscape", "brand_system"]
+}</code></pre>
 
-  <p><strong>Priority scoring:</strong> Business impact 9 (revenue-generating), but Phase urgency 2 (greenfield PreD) and resource efficiency 4 (multi-day project) yields Priority = 3.35. Queued — high business value, not blocking anything.</p>
+  <p><strong>Step 2 — NPAO builds the task tree:</strong> All work is classified into 5D phases. Dependencies are mapped. Phase gates are enforced — no Design work begins until PreD is signed off.</p>
 
-  <p><strong>Persistence:</strong> Stripe integration knowledge persists in project KB. Decision logged: "Chose Stripe over Paddle due to flexibility." Learning logged: "Webhook delivery monitoring critical — 5% failure rate in testing caught early." Next time any agent needs Stripe info, it reads from KB without re-research.</p>
+  <pre><span class="code-label">NPAO TASK DECOMPOSITION</span><code>Phase 0 — PreD:
+  Task 1.0: Define pricing tiers and messaging  [Planning Agent]
+  Task 1.1: Competitive pricing analysis         [RAG DAL → Research Agent]
+  Task 1.2: Go/no-go: enough to design?          [Planning Agent]  ← GATE
+
+Phase 1 — Design:
+  Task 2.0: Pricing page wireframe               [Design Agent]
+  Task 2.1: Copy: headlines, features, CTA       [Builder Agent]
+  Task 2.2: Design review                        [Review Agent]   ← GATE
+
+Phase 2 — Development:
+  Task 3.0: Build pricing page component         [Builder Agent]
+  Task 3.1: Wire Stripe checkout                 [Builder Agent]
+  Task 3.2: Code review                          [Review Agent]
+  Task 3.3: QA test full flow                    [QA Agent]       ← GATE
+
+Phase 3 — Deployment:
+  Task 4.0: Deploy to staging                    [Deploy Agent]
+  Task 4.1: Visual QA on staging                 [Design Agent]
+  Task 4.2: Deploy to production                 [Deploy Agent]
+  Task 4.3: Post-deploy canary check             [Canary Agent]</code></pre>
+
+  <p><strong>Step 3 — RAG DAL executes for PreD Task 1.1:</strong> Query: "What do independent musicians pay today for music promotion tools? What does the competitive landscape look like?" RAG DAL runs 3-pass hierarchical search across SubmitHub, Groover, Playlist Push, and market reports. Returns structured competitor pricing table, user sentiment analysis, and positioning opportunity. Stores result in project knowledge base.</p>
+
+  <p><strong>Step 4 — Agents execute in phase order:</strong> Research Agent reads the RAG DAL output, writes the PreD report. Planning Agent reviews and gives go-decision. Design Agent builds wireframe. Builder Agent implements the component. Review Agent checks the code. QA Agent tests the flow. Deploy Agent ships. Each agent reads from the Reference Hub and writes back to it.</p>
+
+  <p><strong>Step 5 — Reference Hub compounds:</strong> Competitor pricing data from Task 1.1 is now available to the Copywriting Agent, Sales Agent, and every future session. Implementation patterns from Task 3.0 are documented and reusable. QA findings from Task 3.3 are in the learnings log. Next time someone asks about pricing — the answer is already in the hub.</p>
+
+  <div class="callout">
+    Priority scoring for Task 1.1: Phase urgency 2 (greenfield PreD), Dependency impact 8 (blocks all design and dev), Business impact 9 (revenue-generating page), Resource efficiency 7 (RAG DAL 30–60 min). Composite = (2×0.35) + (8×0.30) + (9×0.25) + (7×0.10) = <strong>6.15 → queued for next available Research Agent</strong>.
+  </div>
 
   <h3 class="subsection-title">8.2 Reference Implementation: GTM Operations Agent</h3>
   <p>Practical application for RevOps teams handling account research, pipeline hygiene, call prep, and CRM data entry.</p>
@@ -1725,6 +2024,92 @@ memory:
   save: [account_insights, competitive_intel, decision_maker_notes]</code></pre>
 
   <p><strong>Pilot Data (Informal):</strong> Account brief generation: 5–7 minutes vs. 30–45 minutes manual. Knowledge reuse: 40% of briefs leverage prior research. Sales rep satisfaction: 4.2/5.0 (n=12). CRM data quality: 15% reduction in missing next steps. <em>Note: Pilot scale insufficient for rigorous validation; demonstrates viability, not statistical significance.</em></p>
+
+  <div id="s8-2b">
+  <h3 class="subsection-title">8.2b Agent Team Configurations</h3>
+  <p>Three reference YAML configurations cover the most common deployment scales. Teams use these as starting points and extend with domain-specific agents.</p>
+
+  <pre><span class="code-label">YAML — MINIMUM VIABLE TEAM (1 agent, 5 minutes setup)</span><code>hub:
+  namespace: my-project
+  storage: local
+
+agents:
+  - name: assistant
+    type: general
+    model: claude-sonnet-4-6
+    tools: [file_system, web_search]
+
+modules:
+  pal: true
+  ragdal: false
+  npao: false</code></pre>
+
+  <pre><span class="code-label">YAML — STANDARD 5-AGENT TEAM (product development)</span><code>hub:
+  namespace: my-product
+  storage: supabase
+
+agents:
+  - name: researcher
+    type: researcher
+    tools: [ragdal, web_search]
+    phases: [prd]
+  - name: builder
+    type: builder
+    tools: [file_system, code_execution, bash]
+    phases: [development, debugging]
+  - name: reviewer
+    type: reviewer
+    tools: [file_system]
+    phases: [development]
+  - name: qa
+    type: qa
+    tools: [browser, file_system]
+    phases: [development, deployment]
+  - name: deployer
+    type: deployer
+    tools: [bash, browser]
+    phases: [deployment]
+
+modules:
+  pal: true
+  ragdal: true
+  npao: true
+  dashboard: true</code></pre>
+
+  <pre><span class="code-label">YAML — ENTERPRISE GTM CONFIGURATION (Atlas HXM pattern)</span><code>hub:
+  namespaces:
+    - org: atlas-hxm
+    - teams: [gtm, engineering, product]
+    - projects: [rfp-suite, prospect-dashboard, gtm-automation]
+  storage: supabase
+  auth: true
+  multi_user: true
+
+agents:
+  - name: prospect-researcher
+    type: specialist
+    description: Enriches leads using CRM and intent data
+    tools: [hubspot_api, ragdal, web_search]
+    context_required: [org/atlas-hxm/icp.md]
+
+  - name: rfp-responder
+    type: specialist
+    description: Answers RFP questions from knowledge base
+    tools: [ragdal, file_system, hubspot_api]
+
+  - name: outreach-writer
+    type: specialist
+    description: Drafts personalized cold outreach
+    tools: [hubspot_api, ragdal]
+    context_required: [org/atlas-hxm/icp.md, org/atlas-hxm/messaging.md]
+
+modules:
+  pal: true
+  ragdal: true
+  npao: true
+  dashboard: true
+  api: true</code></pre>
+  </div>
 
   <h3 class="subsection-title">8.3 Deployment Patterns</h3>
   <div class="table-wrap">
@@ -1785,6 +2170,40 @@ memory:
 
   <p><strong>Persistent Multi-Namespace Knowledge.</strong> Four-level state hierarchy with cross-agent access patterns enables organizational knowledge compounding. Research done once, available to all agents in scope.</p>
 
+  <h3 class="subsection-title">10.1b DOE Model Alignment</h3>
+  <p>DOE (Directives → Orchestration → Execution) is an established mental model for agent architecture. ROSTR maps cleanly onto DOE and extends it in three critical ways:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>DOE Layer</th><th>Rostr Equivalent</th><th>Extension</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Directives</strong> (what we want done)</td><td>PAL + NPAO — PAL compiles intent into directives; NPAO routes directives to the right phase</td><td>DOE assumes you know what to direct. ROSTR adds PreD — the structured process for determining what's worth doing before directing anything.</td></tr>
+        <tr><td><strong>Orchestration</strong> (how work gets sequenced)</td><td>Rostr Hub + NPAO — NPAO prioritizes and allocates; Hub manages state, communication, agents</td><td>DOE orchestration is stateless between runs. ROSTR's Reference Hub makes orchestration decisions persistent and contextually informed by prior cycles.</td></tr>
+        <tr><td><strong>Execution</strong> (doing the work)</td><td>Agent Layer + RAG DAL — agents implement, research, review, deploy; RAG DAL provides knowledge to executing agents</td><td>DOE treats execution as one layer. ROSTR separates knowledge acquisition (RAG DAL, shared, persistent) from task execution (agents), enabling knowledge compounding across execution cycles.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>The key architectural extension ROSTR makes to DOE: <strong>persistent state</strong>. DOE is a pattern, not an implementation. ROSTR is an implementation — open source, deployable, and with institutional memory built in.</p>
+
+  <h3 class="subsection-title">10.1c Competitive Landscape</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Framework</th><th>Primary Approach</th><th>ROSTR Advantage</th></tr></thead>
+      <tbody>
+        <tr><td>LangChain</td><td>Tool chaining, no persistent state</td><td>Persistent Reference Hub, NPAO 5D phase taxonomy</td></tr>
+        <tr><td>CrewAI</td><td>Role-based agent teams</td><td>PreD formalization, multi-pass credibility-weighted RAG, modular hub</td></tr>
+        <tr><td>AutoGPT</td><td>Autonomous execution</td><td>Structured phases, human-in-loop gates, explicit priority model</td></tr>
+        <tr><td>MetaGPT</td><td>SOP-based agent roles with artifact generation</td><td>Persistent knowledge across projects, dynamic priority routing</td></tr>
+        <tr><td>Dify</td><td>Visual workflow builder</td><td>Code-first + visual, open source composition standard</td></tr>
+        <tr><td>n8n</td><td>Workflow automation</td><td>Agent-native design (not workflow-native), LLM-first architecture</td></tr>
+        <tr><td>Flowise</td><td>LLM app visual builder</td><td>Phase-aware state management, knowledge compounding, priority scoring</td></tr>
+        <tr><td>Bee Framework (IBM)</td><td>Enterprise agent OS</td><td>Fully open source, smaller deployment footprint, phase-aware routing</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>ROSTR's moat is the combination: no other framework pairs a PAL compilation layer + hierarchical credibility-weighted RAG + phase-aware multi-dimensional prioritization + persistent reference hub in a single open source package.</p>
+
   <h3 class="subsection-title">10.2 Limitations</h3>
   <ul>
     <li><strong>Empirical Validation Pending.</strong> All performance claims are theoretical or from small-scale informal pilots. Comprehensive validation per Section 9 is future work.</li>
@@ -1818,13 +2237,35 @@ memory:
     <li><strong>Rostr Hub</strong> provides persistent multi-namespace knowledge architecture, agent registry, state management, and cross-agent communication protocols</li>
   </ol>
 
-  <p>The unified system demonstrates viability through reference implementations (GTM operations agents) and provides measurable specifications for each component. Comprehensive empirical validation remains future work, with detailed experimental designs outlined in Section 9.</p>
+  <p>The unified system demonstrates viability through reference implementations (GTM operations, product development, content workflows) and provides measurable specifications for each component. Comprehensive empirical validation remains future work, with detailed research designs in Section 9.</p>
 
-  <p>Key contributions: first integrated framework unifying compilation, credibility-weighted RAG, phase-aware orchestration, and persistent state; formalization of the PreD phase; hierarchical source credibility for retrieval quality control; open, modular architecture for community contribution.</p>
+  <p>Key contributions: first integrated framework unifying intent compilation, credibility-weighted retrieval, phase-aware orchestration, and persistent multi-namespace state; formalization of the PreD phase as a first-class workflow stage; hierarchical source credibility for RAG quality control; open modular architecture enabling community contribution at every layer.</p>
 
   <div class="callout">
-    ROSTR is designed as open-source infrastructure enabling production-grade multi-agent systems with reduced brittleness, improved knowledge persistence, and phase-aware workflow management. By addressing foundational architectural gaps rather than incremental model improvements, the framework aims to make sophisticated agent teams accessible, reliable, and maintainable for organizations of all scales.
+    "The bottleneck to AI at work is not the models — it's the infrastructure around them. Models are already good enough to do extraordinary things. What they lack is a compiler layer that normalizes how they're instructed, a knowledge layer that gives them access to reliable persistent information, a priority model that ensures the right things get done in the right order, and a hub that connects everything and holds the context that makes agents useful over time." — Rostr Framework, Combined Whitepaper v1.0
   </div>
+
+  <h3 class="subsection-title">Getting Started</h3>
+  <p>The fastest path to a running ROSTR system:</p>
+
+  <pre><span class="code-label">BASH — QUICKSTART (5 minutes)</span><code># Install Rostr CLI
+pip install rostr
+
+# Initialize a new hub
+rostr init my-project
+
+# Register your first agent
+rostr agent add --name assistant --model claude-sonnet-4-6
+
+# Start the hub
+rostr start
+
+# Give your agent a task (PAL handles the rest)
+rostr task "Research the competitive landscape for music promotion tools"</code></pre>
+
+  <p>Zero-infrastructure option: add the PAL protocol to any CLAUDE.md file. PAL activates immediately for all Claude Code sessions — no server, no database, no configuration required.</p>
+
+  <p>All components are MIT licensed and available at <strong>github.com/rostr-ai</strong>.</p>
 </div>
 
 <!-- ── REFERENCES ── -->
