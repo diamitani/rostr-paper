@@ -703,7 +703,7 @@ ol li::before {
   line-height: 1.6;
 }
 
-/* NPAO Origin Cards */
+/* NPAO Framework Cards */
 .npao-origin-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -751,6 +751,62 @@ ol li::before {
 .npao-o .npao-trigger { color: #34d399; }
 .npao-def { font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 8px; }
 .npao-ex { font-size: 11.5px; color: var(--text-muted); font-style: italic; line-height: 1.5; }
+
+/* NPAO Phase Grid */
+.npao-phase-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin: 24px 0;
+}
+@media (max-width: 860px) { .npao-phase-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .npao-phase-grid { grid-template-columns: 1fr; } }
+
+.npao-phase-card {
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  padding: 16px 14px;
+  background: var(--surface);
+}
+.npao-phase-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.npao-phase-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.npao-phase-agents {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.npao-phase-card.phase-prd { border-top: 2px solid #8b5cf6; }
+.npao-phase-card.phase-d1  { border-top: 2px solid var(--gold); }
+.npao-phase-card.phase-d2  { border-top: 2px solid #60a5fa; }
+.npao-phase-card.phase-d3  { border-top: 2px solid #f87171; }
+.npao-phase-card.phase-d4  { border-top: 2px solid #34d399; }
+.npao-phase-label.prd { color: #8b5cf6; }
+.npao-phase-label.d1  { color: var(--gold); }
+.npao-phase-label.d2  { color: #60a5fa; }
+.npao-phase-label.d3  { color: #f87171; }
+.npao-phase-label.d4  { color: #34d399; }
+
+/* NPAO vs Table */
+.npao-vs-table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 13px; }
+.npao-vs-table th { background: rgba(212,175,55,0.08); color: var(--gold); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 10px 14px; text-align: left; border-bottom: 1px solid rgba(212,175,55,0.2); }
+.npao-vs-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-secondary); vertical-align: middle; }
+.npao-vs-table tr:last-child td { border-bottom: none; }
+.npao-vs-table tr:hover td { background: rgba(255,255,255,0.02); }
+.npao-vs-table .check { color: #34d399; font-weight: 700; }
+.npao-vs-table .cross { color: #f87171; }
+.npao-vs-table .npao-row td { color: var(--text); font-weight: 600; background: rgba(212,175,55,0.04); }
 
 /* Footer */
 footer {
@@ -1259,52 +1315,51 @@ memory:
   <div class="section-number">Section 6</div>
   <h2 class="section-title">NPAO: Navigate, Prioritize, Allocate, Orchestrate</h2>
 
-  <h3 class="subsection-title">6.0 Origin: The NPAO Framework</h3>
-  <p>NPAO was originally developed by Patrick Diamitani as a personal and professional task management framework. The acronym stands for <strong>Necessity, Priority, Anxiety, and Opportunity</strong> — a needs-based model for activating goals faster by aligning actions to what matters most.</p>
+  <p>Multi-agent systems fail in predictable ways: tasks get routed to the wrong agent for the phase they're in, concurrent requests execute in FIFO order regardless of business impact, and agents are assigned by availability rather than capability match. NPAO is the framework that fixes all three simultaneously.</p>
+
+  <p>NPAO is an agent prioritization and routing engine composed of four interdependent functions. Together they answer the four questions every multi-agent runtime must answer on every request: <em>which agent?</em> (Navigate), <em>in what order?</em> (Prioritize), <em>with what resources?</em> (Allocate), and <em>how do they hand off?</em> (Orchestrate).</p>
 
   <div class="npao-origin-grid">
     <div class="npao-card npao-n">
       <div class="npao-letter">N</div>
       <div class="npao-content">
-        <div class="npao-name">Necessity</div>
-        <div class="npao-trigger">I MUST</div>
-        <div class="npao-def">An essential function without which no following tasks can be completed.</div>
-        <div class="npao-ex">"I must develop a business plan to organize this idea."</div>
+        <div class="npao-name">Navigate</div>
+        <div class="npao-trigger">Route · Classify · Re-route</div>
+        <div class="npao-def">Classify and route the right agent to the right task at the right development phase. Navigation is phase-aware and context-informed — it can recursively re-route when state changes mid-execution.</div>
+        <div class="npao-ex">Detects that a "test this" request in PreD phase goes to a spec agent, not QA.</div>
       </div>
     </div>
     <div class="npao-card npao-p">
       <div class="npao-letter">P</div>
       <div class="npao-content">
-        <div class="npao-name">Priority</div>
-        <div class="npao-trigger">I NEED</div>
-        <div class="npao-def">Important to accomplishing your stated mission, even if not strictly blocking.</div>
-        <div class="npao-ex">"I need to hire a marketer to launch our product."</div>
+        <div class="npao-name">Prioritize</div>
+        <div class="npao-trigger">Score · Rank · Schedule</div>
+        <div class="npao-def">Score and rank concurrent tasks using a multi-dimensional model: urgency × impact × feasibility × dependency-depth. Prevents high-value work from waiting behind low-value noise.</div>
+        <div class="npao-ex">A security-critical bug scores above a styling tweak even if submitted later.</div>
       </div>
     </div>
     <div class="npao-card npao-a">
       <div class="npao-letter">A</div>
       <div class="npao-content">
-        <div class="npao-name">Anxiety</div>
-        <div class="npao-trigger">I WON'T HAVE PEACE UNTIL</div>
-        <div class="npao-def">A task that keeps surfacing and consuming cognitive energy until resolved.</div>
-        <div class="npao-ex">"I won't have peace until I finish the backlog projects in my portfolio."</div>
+        <div class="npao-name">Allocate</div>
+        <div class="npao-trigger">Match · Load-balance · Register</div>
+        <div class="npao-def">Assign agents to tasks by matching capability profiles to task requirements and current load. The allocator maintains a live agent registry and respects concurrency limits per agent.</div>
+        <div class="npao-ex">Routes a legal-review task to the Legal agent, not the overloaded Manager agent.</div>
       </div>
     </div>
     <div class="npao-card npao-o">
       <div class="npao-letter">O</div>
       <div class="npao-content">
-        <div class="npao-name">Opportunity</div>
-        <div class="npao-trigger">I CAN</div>
-        <div class="npao-def">Completing this task unlocks new growth — additive, not defensive.</div>
-        <div class="npao-ex">"I can prospect 500 additional leads this week to get closer to quota."</div>
+        <div class="npao-name">Orchestrate</div>
+        <div class="npao-trigger">Sequence · Handoff · Coordinate</div>
+        <div class="npao-def">Manage execution sequencing, structured handoffs, and multi-agent coordination across the full task graph. Orchestration defines how agents pass context between phases without losing state.</div>
+        <div class="npao-ex">After Booking confirms a show, Orchestrate triggers Finance to initiate deal memo review.</div>
       </div>
     </div>
   </div>
 
-  <p>In the ROSTR architecture, these four dimensions are adapted for multi-agent orchestration. <strong>Navigate</strong> maps to Necessity — classify what the system <em>must</em> resolve first. <strong>Prioritize</strong> maps to Priority — rank tasks by mission impact. <strong>Allocate</strong> maps to Anxiety — surface and resolve blocking dependencies before they compound. <strong>Orchestrate</strong> maps to Opportunity — structure execution to capture maximum value from each completed unit of work.</p>
-
   <div class="callout">
-    The framework was designed by Patrick Diamitani as an organizational model to help people activate goals faster by prioritizing the most pressing needs and aligning actions toward effective execution — a mental model that translates directly to autonomous agent workflows.
+    NPAO is not a queue. It is a decision engine. Every request passes through all four functions on every invocation — navigation first, then prioritization against the current task graph, then allocation to the optimal available agent, then orchestration of the downstream handoff chain.
   </div>
 
   <div id="s6-1">
@@ -1382,6 +1437,155 @@ memory:
 
   <h3 class="subsection-title">6.5 Orchestration Patterns</h3>
   <p>NPAO supports four execution patterns: <strong>Sequential Chain</strong> (A → B → C, output of A is input to B); <strong>Parallel Fan-Out</strong> (A → {B, C, D} for independent tasks); <strong>Aggregation Fan-In</strong> ({A, B, C} → E to synthesize results); and <strong>Conditional Branch</strong> (A → [decision] → B or C, e.g., PreD go/no-go).</p>
+
+  <div id="s6-6">
+  <h3 class="subsection-title">6.6 Phase Completion Criteria</h3>
+  <p>NPAO enforces gate conditions between phases. A task cannot advance until its current phase completion criteria are satisfied — preventing premature progression that causes downstream rework.</p>
+
+  <div class="npao-phase-grid">
+    <div class="npao-phase-card phase-prd">
+      <div class="npao-phase-label prd">Phase 0 · PreD</div>
+      <div class="npao-phase-name">Pre-Development</div>
+      <div class="npao-phase-agents">
+        ✓ Problem statement approved<br>
+        ✓ Competitive research complete<br>
+        ✓ Key assumptions documented<br>
+        ✓ Feasibility assessed<br>
+        ✓ Go/No-Go decision recorded<br>
+        ✓ PreD Report generated
+      </div>
+    </div>
+    <div class="npao-phase-card phase-d1">
+      <div class="npao-phase-label d1">Phase 1 · Design</div>
+      <div class="npao-phase-name">Architecture &amp; Spec</div>
+      <div class="npao-phase-agents">
+        ✓ System architecture defined<br>
+        ✓ Agent roles specified<br>
+        ✓ Data flow documented<br>
+        ✓ Edge cases enumerated<br>
+        ✓ Spec document approved<br>
+        ✓ Test strategy drafted
+      </div>
+    </div>
+    <div class="npao-phase-card phase-d2">
+      <div class="npao-phase-label d2">Phase 2 · Development</div>
+      <div class="npao-phase-name">Implementation</div>
+      <div class="npao-phase-agents">
+        ✓ Feature implemented<br>
+        ✓ Unit tests passing<br>
+        ✓ Integration tests passing<br>
+        ✓ Code review completed<br>
+        ✓ No P0/P1 open bugs<br>
+        ✓ Performance baseline met
+      </div>
+    </div>
+    <div class="npao-phase-card phase-d3">
+      <div class="npao-phase-label d3">Phase 3 · Deployment</div>
+      <div class="npao-phase-name">Ship &amp; Verify</div>
+      <div class="npao-phase-agents">
+        ✓ Staging deploy verified<br>
+        ✓ Canary health passing<br>
+        ✓ Rollback plan confirmed<br>
+        ✓ Monitoring alerts live<br>
+        ✓ Production smoke tests pass<br>
+        ✓ Stakeholders notified
+      </div>
+    </div>
+    <div class="npao-phase-card phase-d4">
+      <div class="npao-phase-label d4">Phase 4 · Debugging</div>
+      <div class="npao-phase-name">Root Cause &amp; Fix</div>
+      <div class="npao-phase-agents">
+        ✓ Root cause identified<br>
+        ✓ Fix implemented &amp; tested<br>
+        ✓ Regression test added<br>
+        ✓ Post-mortem written<br>
+        ✓ Prevention plan documented<br>
+        ✓ Related surfaces audited
+      </div>
+    </div>
+  </div>
+
+  <p>The PreD Report is the gate artifact for Phase 0 exit. It must contain: problem statement (one paragraph), assumptions list, research summary (RAG DAL output), feasibility score (0–10), risk matrix, and a binary go/no-go decision with rationale. No Phase 1 work begins without a signed-off PreD Report.</p>
+  </div>
+
+  <div id="s6-7">
+  <h3 class="subsection-title">6.7 NPAO Configuration</h3>
+  <p>NPAO ships as a declarative YAML configuration layer that overrides defaults per project. Teams define their own weight distributions, agent concurrency limits, and handoff protocols without modifying core framework code.</p>
+
+  <pre><span class="code-label">YAML — npao.config.yaml</span><code>npao:
+  navigate:
+    phase_detection: semantic        # semantic | keyword | explicit
+    fallback: PreD                   # Default phase when undetectable
+    confidence_threshold: 0.72       # Minimum score to confirm routing
+    re_route_on_state_change: true   # Re-classify if context shifts mid-run
+
+  prioritize:
+    weights:
+      phase_urgency: 0.35
+      dependency_impact: 0.30
+      business_impact: 0.25
+      resource_efficiency: 0.10
+    tie_breaker: earliest_created    # earliest_created | highest_impact | random
+    immediate_threshold: 7.0         # Score ≥ this → immediate allocation
+    async_threshold: 4.0             # Score &lt; this → backlog
+
+  allocate:
+    strategy: capability_match       # capability_match | round_robin | load_only
+    load_balance: true
+    max_concurrent_per_agent: 3
+    context_weight: 0.50             # Weight for semantic similarity score
+    specialization_weight: 0.35      # Weight for capability overlap score
+    load_weight: 0.15                # Weight for current load score
+
+  orchestrate:
+    handoff_protocol: structured_summary   # structured_summary | raw_context | minimal
+    retry_limit: 2                         # Retries before escalation
+    escalation: human_review               # human_review | fallback_agent | log_and_skip
+    phase_gate_enforcement: strict         # strict | warn | off</code></pre>
+  </div>
+
+  <div id="s6-8">
+  <h3 class="subsection-title">6.8 Open Source Implementation</h3>
+  <p>NPAO is being released as a standalone open source framework, decoupled from the Rostr platform, so any multi-agent system can implement it. The repository provides core components as composable modules.</p>
+
+  <div class="callout">
+    Repository: <strong>github.com/rostr-ai/npao</strong> — MIT licensed. Designed as a drop-in orchestration layer for Claude, GPT, Gemini, or any LLM-based agent team.
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Component</th><th>Responsibility</th><th>Interface</th></tr></thead>
+      <tbody>
+        <tr><td><code>NPAORouter</code></td><td>Phase detection and agent routing. Runs semantic classifier against task context, returns (phase, agent_id, confidence).</td><td><code>route(task: Task) → RouteResult</code></td></tr>
+        <tr><td><code>PriorityEngine</code></td><td>Multi-dimensional scoring. Consumes task metadata and returns a composite 0–10 priority score with dimension breakdown.</td><td><code>score(task: Task) → PriorityScore</code></td></tr>
+        <tr><td><code>AgentAllocator</code></td><td>Capability matching and load balancing. Maintains live agent registry, returns the optimal agent for a scored task.</td><td><code>allocate(task: ScoredTask) → Agent</code></td></tr>
+        <tr><td><code>OrchestrationController</code></td><td>Sequencing, handoffs, fan-out/fan-in coordination. Manages the full execution graph and escalation on retry exhaustion.</td><td><code>execute(graph: TaskGraph) → Result</code></td></tr>
+        <tr><td><code>PhaseGate</code></td><td>Completion criteria enforcement. Validates that all gate conditions for a phase are met before allowing state transition.</td><td><code>validate(task: Task, phase: Phase) → GateResult</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  </div>
+
+  <div id="s6-9">
+  <h3 class="subsection-title">6.9 NPAO vs. Competing Approaches</h3>
+  <p>NPAO occupies a specific position in the orchestration space — phase-aware, multi-dimensional priority, and dynamically allocated — that no existing approach fully covers.</p>
+
+  <div class="table-wrap">
+    <table class="npao-vs-table">
+      <thead><tr><th>Approach</th><th>Phase-Aware</th><th>Priority Model</th><th>Dynamic Allocation</th><th>Structured Handoff</th><th>Gate Enforcement</th></tr></thead>
+      <tbody>
+        <tr><td>Keyword Routing</td><td class="cross">✗</td><td class="cross">None (FIFO)</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <tr><td>Priority Queue</td><td class="cross">✗</td><td class="cross">Single-dim</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <tr><td>Round Robin</td><td class="cross">✗</td><td class="cross">None</td><td class="cross">Static</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <tr><td>LangGraph / Workflow DAG</td><td class="cross">✗</td><td class="cross">Manual</td><td class="cross">Manual</td><td class="check">✓</td><td class="cross">✗</td></tr>
+        <tr><td>CrewAI Role Assignment</td><td class="cross">✗</td><td class="cross">None</td><td class="cross">Static roles</td><td class="check">✓</td><td class="cross">✗</td></tr>
+        <tr class="npao-row"><td><strong>NPAO</strong></td><td class="check">✓</td><td class="check">Multi-dimensional</td><td class="check">✓ Dynamic</td><td class="check">✓</td><td class="check">✓</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>The critical differentiator is phase-awareness. LangGraph and CrewAI are powerful execution frameworks, but they treat all tasks as phase-neutral. NPAO's navigation layer understands that the same request ("write tests for this feature") should route to a spec-validation agent in Design, a unit-test agent in Development, and a regression-detection agent in Debugging. Phase context changes the right answer.</p>
+  </div>
 </div>
 
 <!-- ── SECTION 7 ── -->
