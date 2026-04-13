@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROSTR: A Unified Architecture for Production-Grade Multi-Agent Systems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --surface-hover: #1a1a1a;
+  --border: #1f1f1f;
+  --border-hover: #2a2a2a;
+  --gold: #D4AF37;
+  --gold-light: #E8C84A;
+  --gold-dark: #B8961F;
+  --gold-muted: rgba(212,175,55,0.10);
+  --gold-glow: rgba(212,175,55,0.20);
+  --text: #FFFFFF;
+  --text-secondary: #A0A0A0;
+  --text-muted: #666666;
+  --sidebar-w: 280px;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; font-size: 16px; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* ── Progress Bar ── */
+#progress-bar {
+  position: fixed;
+  top: 0; left: 0;
+  height: 3px;
+  width: 0%;
+  background: linear-gradient(90deg, var(--gold-dark), var(--gold), var(--gold-light));
+  z-index: 1000;
+  transition: width 0.1s linear;
+  box-shadow: 0 0 8px var(--gold);
+}
+
+/* ── Sidebar ── */
+#sidebar {
+  position: fixed;
+  top: 0; left: 0;
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+#sidebar::-webkit-scrollbar { width: 4px; }
+#sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.sidebar-header {
+  padding: 28px 24px 20px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+
+.sidebar-logo {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  display: block;
+}
+
+.sidebar-sub {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.toc-nav { padding: 16px 0 32px; }
+
+.toc-section-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 12px 24px 6px;
+}
+
+.toc-link {
+  display: block;
+  padding: 6px 24px 6px 20px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: all 0.15s ease;
+  line-height: 1.4;
+}
+
+.toc-link:hover {
+  color: var(--text);
+  background: var(--gold-muted);
+  border-left-color: var(--gold-dark);
+}
+
+.toc-link.active {
+  color: var(--gold);
+  border-left-color: var(--gold);
+  background: var(--gold-muted);
+  font-weight: 500;
+}
+
+.toc-link.sub {
+  padding-left: 36px;
+  font-size: 11.5px;
+}
+
+/* ── Hamburger (mobile) ── */
+#hamburger {
+  display: none;
+  position: fixed;
+  top: 16px; left: 16px;
+  z-index: 200;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#hamburger span {
+  display: block;
+  width: 20px; height: 2px;
+  background: var(--text-secondary);
+  border-radius: 1px;
+  transition: all 0.2s;
+}
+
+#mobile-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 99;
+  backdrop-filter: blur(2px);
+}
+
+/* ── Main Content ── */
+#main {
+  margin-left: var(--sidebar-w);
+  min-height: 100vh;
+}
+
+.content-inner {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 80px 48px 120px;
+}
+
+/* ── Hero ── */
+.hero {
+  margin-bottom: 64px;
+  padding-bottom: 48px;
+  border-bottom: 1px solid var(--border);
+}
+
+.paper-title {
+  font-size: clamp(24px, 3.5vw, 38px);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text);
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.paper-title span {
+  background: linear-gradient(135deg, var(--gold-dark), var(--gold), var(--gold-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.title-underline {
+  height: 2px;
+  width: 80px;
+  background: linear-gradient(90deg, var(--gold), transparent);
+  margin: 16px 0 28px;
+  border-radius: 1px;
+}
+
+.author-block { margin-bottom: 28px; }
+.author-name { font-size: 16px; font-weight: 600; color: var(--text); }
+.author-meta { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.author-meta a { color: var(--gold); text-decoration: none; }
+.author-meta a:hover { text-decoration: underline; }
+
+.paper-date {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 28px;
+}
+
+.keywords { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 32px; }
+
+.keyword-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  background: var(--gold-muted);
+  border: 1px solid rgba(212,175,55,0.25);
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--gold);
+  letter-spacing: 0.05em;
+}
+
+.abstract-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  border-radius: 8px;
+  padding: 28px 32px;
+  margin-bottom: 28px;
+}
+
+.abstract-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 14px;
+}
+
+.abstract-card p {
+  font-size: 14.5px;
+  line-height: 1.8;
+  color: var(--text-secondary);
+}
+
+/* ── Sections ── */
+.section {
+  margin-bottom: 72px;
+  scroll-margin-top: 32px;
+}
+
+.section-number {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+
+h2.section-title {
+  font-size: clamp(20px, 2.5vw, 28px);
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  transition: color 0.2s;
+}
+
+h2.section-title:hover { color: var(--gold-light); }
+
+h3.subsection-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 32px 0 14px;
+  letter-spacing: -0.01em;
+}
+
+h3.subsection-title::before {
+  content: '▸ ';
+  color: var(--gold);
+  font-size: 12px;
+}
+
+h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gold);
+  margin: 24px 0 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+p { margin-bottom: 16px; color: var(--text-secondary); font-size: 15px; line-height: 1.8; }
+
+strong { color: var(--text); font-weight: 600; }
+
+em { color: var(--text-secondary); font-style: italic; }
+
+/* ── Code ── */
+code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--gold-light);
+  background: rgba(212,175,55,0.08);
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid rgba(212,175,55,0.15);
+}
+
+pre {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold-dark);
+  border-radius: 8px;
+  padding: 24px;
+  overflow-x: auto;
+  margin: 20px 0;
+  position: relative;
+  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+}
+
+pre code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: none;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  line-height: 1.6;
+  white-space: pre;
+}
+
+.code-label {
+  position: absolute;
+  top: 8px; right: 12px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ── Architecture Diagram ── */
+.arch-diagram {
+  background: var(--surface);
+  border: 1px solid var(--gold-dark);
+  border-radius: 10px;
+  padding: 28px;
+  margin: 24px 0;
+  overflow-x: auto;
+  box-shadow: 0 0 30px var(--gold-muted), inset 0 0 20px rgba(0,0,0,0.3);
+}
+
+.arch-diagram pre {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  box-shadow: none;
+}
+
+.arch-diagram pre code {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ── Tables ── */
+.table-wrap { overflow-x: auto; margin: 24px 0; border-radius: 8px; border: 1px solid var(--border); }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+thead th {
+  background: linear-gradient(180deg, rgba(212,175,55,0.15), rgba(212,175,55,0.08));
+  color: var(--gold);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(212,175,55,0.2);
+}
+
+tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  vertical-align: top;
+  line-height: 1.6;
+}
+
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: var(--surface-hover); }
+tbody td:first-child { color: var(--text); font-weight: 500; }
+
+/* ── Lists ── */
+ul, ol { padding-left: 0; margin: 14px 0 20px; list-style: none; }
+
+ul li, ol li {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 8px;
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+ul li::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 10px;
+  width: 5px; height: 5px;
+  background: var(--gold);
+  border-radius: 50%;
+}
+
+ol { counter-reset: list-counter; }
+ol li { counter-increment: list-counter; }
+ol li::before {
+  content: counter(list-counter) '.';
+  position: absolute;
+  left: 0;
+  color: var(--gold);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+/* ── Special Components ── */
+
+/* PAL Pipeline */
+.pal-pipeline {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin: 28px 0;
+  overflow-x: auto;
+}
+
+.pal-step {
+  flex: 1;
+  min-width: 120px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-right: none;
+  padding: 18px 14px;
+  text-align: center;
+  position: relative;
+  transition: background 0.15s;
+}
+
+.pal-step:first-child { border-radius: 8px 0 0 8px; }
+.pal-step:last-child { border-radius: 0 8px 8px 0; border-right: 1px solid var(--border); }
+.pal-step:hover { background: var(--surface-hover); }
+
+.pal-step::after {
+  content: '→';
+  position: absolute;
+  right: -12px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--gold);
+  font-size: 16px;
+  z-index: 1;
+  background: var(--bg);
+  padding: 0 2px;
+}
+
+.pal-step:last-child::after { display: none; }
+
+.pal-num {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+
+.pal-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.pal-desc {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* RAG DAL Tiers */
+.rag-tiers { display: flex; flex-direction: column; gap: 10px; margin: 24px 0; }
+
+.rag-tier {
+  border-radius: 8px;
+  padding: 18px 22px;
+  border: 1px solid;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.rag-tier-1 {
+  background: rgba(212,175,55,0.12);
+  border-color: rgba(212,175,55,0.4);
+}
+
+.rag-tier-2 {
+  background: rgba(212,175,55,0.06);
+  border-color: rgba(212,175,55,0.2);
+}
+
+.rag-tier-3 {
+  background: rgba(212,175,55,0.02);
+  border-color: rgba(212,175,55,0.08);
+}
+
+.tier-badge {
+  flex-shrink: 0;
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.rag-tier-1 .tier-badge { background: var(--gold); color: var(--bg); }
+.rag-tier-2 .tier-badge { background: rgba(212,175,55,0.25); color: var(--gold); border: 1px solid var(--gold-dark); }
+.rag-tier-3 .tier-badge { background: rgba(212,175,55,0.08); color: var(--text-muted); border: 1px solid var(--border-hover); }
+
+.tier-content {}
+.tier-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.tier-score { font-size: 11px; color: var(--gold); font-weight: 600; margin-top: 2px; font-family: var(--font-mono); }
+.tier-examples { font-size: 11.5px; color: var(--text-secondary); margin-top: 4px; }
+
+/* NPAO Phase Badges */
+.phase-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 24px 0;
+}
+
+.phase-badge {
+  padding: 12px 18px;
+  border-radius: 8px;
+  border: 1px solid;
+  min-width: 130px;
+  text-align: center;
+}
+
+.phase-0 { background: rgba(139,92,246,0.1); border-color: rgba(139,92,246,0.3); }
+.phase-1 { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.3); }
+.phase-2 { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); }
+.phase-3 { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); }
+.phase-4 { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); }
+
+.phase-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.phase-0 .phase-label { color: #a78bfa; }
+.phase-1 .phase-label { color: #60a5fa; }
+.phase-2 .phase-label { color: #34d399; }
+.phase-3 .phase-label { color: #fbbf24; }
+.phase-4 .phase-label { color: #f87171; }
+
+.phase-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.phase-question { font-size: 10.5px; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
+
+/* Priority Score formula */
+.formula-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px 28px;
+  margin: 20px 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 2;
+}
+
+.formula-block .formula-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  font-family: var(--font-sans);
+}
+
+.formula-var { color: var(--gold); font-weight: 600; }
+.formula-op { color: var(--text-muted); }
+.formula-comment { color: var(--text-muted); font-size: 11px; }
+
+/* Info callout */
+.callout {
+  background: var(--gold-muted);
+  border: 1px solid rgba(212,175,55,0.2);
+  border-left: 3px solid var(--gold);
+  border-radius: 6px;
+  padding: 16px 20px;
+  margin: 20px 0;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+/* References */
+.ref-list { counter-reset: ref-counter; }
+
+.ref-item {
+  display: flex;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  transition: background 0.15s;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.ref-item:hover { background: var(--surface-hover); }
+
+.ref-num {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+  font-family: var(--font-mono);
+  min-width: 24px;
+  padding-top: 2px;
+}
+
+/* Glossary */
+.glossary-grid { display: flex; flex-direction: column; gap: 1px; margin: 20px 0; }
+
+.glossary-item {
+  display: flex;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: baseline;
+}
+
+.glossary-term {
+  flex-shrink: 0;
+  min-width: 160px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold);
+}
+
+.glossary-def {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* Footer */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.footer-logo { font-size: 14px; font-weight: 700; letter-spacing: 0.1em; color: var(--gold); }
+.footer-meta { font-size: 12px; color: var(--text-muted); }
+
+/* Responsive */
+@media (max-width: 900px) {
+  #sidebar { transform: translateX(-100%); transition: transform 0.25s ease; }
+  #sidebar.open { transform: translateX(0); }
+  #hamburger { display: flex; }
+  #mobile-overlay.show { display: block; }
+  #main { margin-left: 0; }
+  .content-inner { padding: 72px 24px 80px; }
+  .pal-pipeline { flex-direction: column; }
+  .pal-step { border-radius: 6px !important; border-right: 1px solid var(--border) !important; min-width: auto; }
+  .pal-step::after { content: '↓'; right: auto; left: 50%; bottom: -12px; top: auto; transform: translateX(-50%); background: var(--bg); }
+  .pal-step:last-child::after { display: none; }
+}
+
+@media print {
+  #sidebar, #hamburger, #progress-bar { display: none !important; }
+  #main { margin-left: 0; }
+  body { background: white; color: black; }
+  .content-inner { padding: 20px; }
+}
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<button id="hamburger" aria-label="Menu" onclick="toggleSidebar()">
+  <span></span><span></span><span></span>
+</button>
+<div id="mobile-overlay" onclick="toggleSidebar()"></div>
+
+<nav id="sidebar">
+  <div class="sidebar-header">
+    <span class="sidebar-logo">ROSTR</span>
+    <span class="sidebar-sub">Research Paper · April 2026</span>
+  </div>
+  <div class="toc-nav">
+    <div class="toc-section-label">Paper</div>
+    <a href="#abstract" class="toc-link">Abstract</a>
+    <a href="#s1" class="toc-link">1. Introduction</a>
+    <a href="#s1-1" class="toc-link sub">1.1 Motivation</a>
+    <a href="#s1-2" class="toc-link sub">1.2 Contribution</a>
+    <a href="#s1-3" class="toc-link sub">1.3 Key Innovations</a>
+    <a href="#s2" class="toc-link">2. Related Work</a>
+    <a href="#s3" class="toc-link">3. System Architecture</a>
+    <a href="#s4" class="toc-link">4. PAL</a>
+    <a href="#s4-1" class="toc-link sub">4.1 Design Rationale</a>
+    <a href="#s4-2" class="toc-link sub">4.2 Pipeline (5 Stages)</a>
+    <a href="#s5" class="toc-link">5. RAG DAL</a>
+    <a href="#s5-1" class="toc-link sub">5.1 Design Rationale</a>
+    <a href="#s5-2" class="toc-link sub">5.2 Three-Tier Sources</a>
+    <a href="#s5-3" class="toc-link sub">5.3 Multi-Pass Loop</a>
+    <a href="#s6" class="toc-link">6. NPAO</a>
+    <a href="#s6-1" class="toc-link sub">6.1 Design Rationale</a>
+    <a href="#s6-2" class="toc-link sub">6.2 5D Phase Taxonomy</a>
+    <a href="#s6-3" class="toc-link sub">6.3 Priority Scoring</a>
+    <a href="#s7" class="toc-link">7. Rostr Hub</a>
+    <a href="#s7-1" class="toc-link sub">7.1 Design Rationale</a>
+    <a href="#s7-2" class="toc-link sub">7.2 Reference Hub</a>
+    <a href="#s7-3" class="toc-link sub">7.3 Agent Registry</a>
+    <a href="#s8" class="toc-link">8. System Integration</a>
+    <a href="#s9" class="toc-link">9. Validation Framework</a>
+    <a href="#s10" class="toc-link">10. Discussion</a>
+    <a href="#s11" class="toc-link">11. Conclusion</a>
+    <div class="toc-section-label">Back Matter</div>
+    <a href="#references" class="toc-link">References</a>
+    <a href="#appendix-a" class="toc-link">Appendix A — Glossary</a>
+    <a href="#appendix-b" class="toc-link">Appendix B — Manifest</a>
+  </div>
+</nav>
+
+<div id="main">
+<div class="content-inner">
+
+<!-- ── HERO ── -->
+<div class="hero" id="abstract">
+  <div class="paper-title">
+    <span>ROSTR</span>: A Unified Architecture for Production-Grade Multi-Agent Systems with Phase-Aware Orchestration and Persistent Knowledge Compounding
+  </div>
+  <div class="title-underline"></div>
+
+  <div class="author-block">
+    <div class="author-name">Patrick Diamitani</div>
+    <div class="author-meta">Independent Researcher · <a href="mailto:patrick@diamitani.com">patrick@diamitani.com</a></div>
+  </div>
+
+  <div class="paper-date">April 2026</div>
+
+  <div class="abstract-card">
+    <div class="abstract-label">Abstract</div>
+    <p>Modern multi-agent AI systems face four fundamental challenges: (1) the <strong>prompting bottleneck</strong>—translating user intent into precise agent instructions requires expertise most users lack; (2) <strong>retrieval brittleness</strong>—agents perform shallow, single-pass information gathering without source validation or gap detection; (3) <strong>context loss</strong>—agents operate statelessly, losing knowledge across sessions and failing to compound organizational learning; and (4) <strong>naive task routing</strong>—orchestration systems route work by keyword matching rather than workflow phase or priority scoring.</p>
+    <p>We present <strong>ROSTR</strong> (Runtime, Orchestration, State, Tools, Reference), a modular agent operating system that addresses these challenges through four integrated components: <strong>PAL</strong> (Prompt Abstraction Layer) compiles natural language intent into structured agent manifests using a five-stage pipeline; <strong>RAG DAL</strong> (Retrieval-Augmented Generation Dynamic Acquisition Layer) performs autonomous multi-pass web retrieval with hierarchical source credibility scoring; <strong>NPAO</strong> (Navigate, Prioritize, Allocate, Orchestrate) introduces a 5D phase taxonomy and multi-dimensional priority scoring for context-aware task routing; and the <strong>Rostr Hub</strong> provides a persistent, multi-namespace knowledge architecture enabling cross-session and cross-agent context preservation.</p>
+    <p>We detail the technical mechanisms of each component, provide measurable specifications, position the work against existing agent frameworks (LangChain, CrewAI, AutoGPT, Bee Framework), and outline an empirical validation framework. Early architectural implementations demonstrate the system's viability for GTM operations, though comprehensive empirical validation remains future work.</p>
+  </div>
+
+  <div class="keywords">
+    <span class="keyword-tag">multi-agent systems</span>
+    <span class="keyword-tag">agent orchestration</span>
+    <span class="keyword-tag">retrieval-augmented generation</span>
+    <span class="keyword-tag">prompt engineering</span>
+    <span class="keyword-tag">knowledge management</span>
+    <span class="keyword-tag">workflow automation</span>
+  </div>
+</div>
+
+<!-- ── SECTION 1 ── -->
+<div class="section" id="s1">
+  <div class="section-number">Section 1</div>
+  <h2 class="section-title">Introduction</h2>
+
+  <div id="s1-1">
+  <h3 class="subsection-title">1.1 Motivation</h3>
+  <p>The rapid advancement of large language models (LLMs) has enabled sophisticated single-agent systems, but deploying <strong>multi-agent teams</strong> for complex, multi-phase work remains fragile. Four systemic problems persist:</p>
+
+  <p><strong>The Prompting Bottleneck.</strong> Agent performance is gated by prompt quality. Users must understand model capabilities, craft precise instructions, and translate domain intent into LLM-compatible formats. This expertise gap limits who can effectively deploy agents [1, 2].</p>
+
+  <p><strong>Retrieval Brittleness.</strong> Standard RAG implementations perform single-pass retrieval without source quality assessment or coverage validation. Agents cannot distinguish authoritative sources from unreliable ones, nor detect when retrieved information is insufficient [3, 4].</p>
+
+  <p><strong>Context Loss Across Sessions.</strong> Agents operate statelessly—each session starts from scratch. Decisions made, knowledge gathered, and workflows established in prior sessions are lost. There is no organizational memory, no knowledge compounding [5].</p>
+
+  <p><strong>Naive Task Routing.</strong> Orchestrators route tasks by keyword matching ("code" → builder agent) without considering workflow phase (research vs. production debugging), priority (revenue-impacting vs. internal tooling), or dependency chains [6, 7].</p>
+
+  <p>These problems compound: poor prompts yield poor agent instructions; brittle retrieval yields unreliable outputs; context loss forces repeated work; naive routing executes the right tasks in the wrong order.</p>
+  </div>
+
+  <div id="s1-2">
+  <h3 class="subsection-title">1.2 Contribution</h3>
+  <p>We present ROSTR, a unified architecture for multi-agent systems that addresses each challenge through modular, composable components:</p>
+  <ol>
+    <li><strong>PAL (Prompt Abstraction Layer)</strong> — A compiler-inspired pipeline that transforms natural language intent into structured agent runtime manifests through intent extraction, context injection, semantic enhancement, runtime compilation, and deterministic routing.</li>
+    <li><strong>RAG DAL (Dynamic Acquisition Layer)</strong> — An autonomous multi-pass retrieval system with three-tier source credibility scoring (academic/authoritative, editorial/verified, community/UGC), self-assessed coverage validation, and persistent knowledge base ingestion with provenance tracking.</li>
+    <li><strong>NPAO (Navigate, Prioritize, Allocate, Orchestrate)</strong> — A decision engine introducing the <strong>5D phase taxonomy</strong> and multi-dimensional priority scoring for context-aware agent allocation.</li>
+    <li><strong>Rostr Hub</strong> — A persistent, multi-namespace knowledge platform providing agent registration, state management, cross-agent communication protocols, and shared reference architecture.</li>
+    <li><strong>System Integration</strong> — Architectural patterns for composing these components into production systems, with reference implementation for GTM operations.</li>
+  </ol>
+  </div>
+
+  <div id="s1-3">
+  <h3 class="subsection-title">1.3 Key Innovations</h3>
+
+  <h4>Architectural</h4>
+  <p>First framework unifying intent compilation, hierarchical credibility-weighted RAG, phase-aware orchestration, and persistent multi-namespace knowledge architecture in a single system.</p>
+
+  <h4>Algorithmic</h4>
+  <ul>
+    <li>Multi-dimensional priority scoring with configurable phase/dependency/business/resource weights</li>
+    <li>Autonomous multi-pass retrieval with convergence criteria based on confidence thresholds and source cross-validation</li>
+    <li>Intent compilation pipeline mapping natural language → typed agent manifests</li>
+    <li>Phase-aware agent allocation considering capability, context, and load</li>
+  </ul>
+
+  <h4>Conceptual</h4>
+  <ul>
+    <li><strong>5D Phase Taxonomy</strong> with formalized PreD (Pre-Development) phase</li>
+    <li><strong>Three-tier source credibility hierarchy</strong> for retrieval quality control</li>
+    <li><strong>Multi-namespace knowledge persistence</strong> enabling organizational context compounding</li>
+    <li><strong>Agent manifest as infrastructure-as-code</strong> for reproducible, versionable assistant definitions</li>
+  </ul>
+  </div>
+</div>
+
+<!-- ── SECTION 2 ── -->
+<div class="section" id="s2">
+  <div class="section-number">Section 2</div>
+  <h2 class="section-title">Related Work</h2>
+
+  <h3 class="subsection-title">2.1 Multi-Agent Orchestration Frameworks</h3>
+
+  <p><strong>LangChain</strong> [8] pioneered modular agent construction through tool chains and memory abstractions. However, it lacks: (1) declarative agent specifications; (2) persistent state across sessions; (3) phase-aware routing beyond keyword matching.</p>
+
+  <p><strong>CrewAI</strong> [9] introduced role-based agent teams with delegation patterns. Limitations: no formalized workflow phase taxonomy; no built-in retrieval quality control; limited state persistence (primarily session-based).</p>
+
+  <p><strong>AutoGPT</strong> [10] demonstrated autonomous agent execution with self-directed task decomposition. However: unstructured exploration with no phase gates; no priority model; minimal human oversight.</p>
+
+  <p><strong>MetaGPT</strong> [11] applied software engineering roles to agent teams, introducing standardized output artifacts (PRDs, design docs, code). Lacks persistent knowledge architecture across projects and dynamic priority-based routing.</p>
+
+  <p><strong>Bee Framework (IBM)</strong> [12] provides enterprise agent infrastructure with strong tool integration. Closed-source limits inspection; heavier deployment footprint; less emphasis on phase-aware workflow management.</p>
+
+  <p><strong>DOE Pattern</strong> [13] (Directives → Orchestration → Execution) provides a mental model for agent architecture. ROSTR extends DOE by adding PreD phase before directives, persistent state across D→O→E cycles, and modular open-source implementation.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>System</th><th>PAL Equivalent</th><th>RAG Equivalent</th><th>Orchestration</th><th>Persistent State</th><th>Open Source</th></tr></thead>
+      <tbody>
+        <tr><td>LangChain</td><td>Prompt templates</td><td>Standard RAG</td><td>Manual chains</td><td>Memory modules (session)</td><td>Yes</td></tr>
+        <tr><td>CrewAI</td><td>Role definitions</td><td>External RAG</td><td>Role-based delegation</td><td>Limited</td><td>Yes</td></tr>
+        <tr><td>AutoGPT</td><td>Self-generated</td><td>Web search (no credibility)</td><td>Autonomous (no priority)</td><td>None</td><td>Yes</td></tr>
+        <tr><td>MetaGPT</td><td>Role-based prompts</td><td>External RAG</td><td>SOP-based</td><td>Artifact-based</td><td>Yes</td></tr>
+        <tr><td>Bee Framework</td><td>—</td><td>Standard RAG</td><td>Built-in orchestration</td><td>Unknown</td><td>No</td></tr>
+        <tr><td><strong>ROSTR</strong></td><td><strong>PAL 5-stage compilation</strong></td><td><strong>RAG DAL 3-tier multi-pass</strong></td><td><strong>NPAO 5D + 4D scoring</strong></td><td><strong>4-level multi-namespace</strong></td><td><strong>Yes (planned)</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="subsection-title">2.2 Retrieval-Augmented Generation</h3>
+  <p>Standard RAG [14, 15] performs: query → retrieve documents → rank by embedding similarity → augment LLM context → generate. Limitations include single-pass retrieval with no iterative refinement, no source quality control (Reddit comments ranked equally with peer-reviewed papers), and no self-assessment of information sufficiency.</p>
+
+  <p>Closest related work: <strong>STORM</strong> [18] performs multi-perspective question generation for Wikipedia-style articles. RAG DAL differs by using hierarchical credibility rather than uniform sourcing, confidence thresholds for convergence, and cross-agent persistence beyond single-article scope.</p>
+
+  <h3 class="subsection-title">2.3 Workflow and Task Management</h3>
+  <p>Workflow engines (Airflow [19], Prefect [20], Temporal [21]) excel at orchestrating deterministic DAGs but assume predefined task structure, no dynamic priority adjustment, and no agent-specific context. Issue trackers (Jira, Linear) provide priority scoring (P0-P4) but lack multi-dimensional weighting, agent capability matching, and automated phase classification.</p>
+
+  <h3 class="subsection-title">2.4 Prompt Engineering and LLM Compilers</h3>
+  <p><strong>DSPy</strong> [22] optimizes prompts through automated refinement but focuses on response quality optimization rather than agent manifest generation. PAL's compilation target is a structured runtime configuration (tools, permissions, memory policy), not an optimized prompt string.</p>
+
+  <h3 class="subsection-title">2.5 Knowledge Management and Memory</h3>
+  <p>Vector databases (Pinecone, Weaviate, Chroma) provide embedding storage and similarity search. ROSTR's Reference Hub extends this with a multi-namespace hierarchy, structured metadata (decisions, learnings, artifacts), and cross-agent access patterns. Agent memory systems [26, 27] typically provide short-term (conversation buffer) and long-term (vector store) memory. ROSTR adds a four-level hierarchy with knowledge compounding and provenance tracking.</p>
+</div>
+
+<!-- ── SECTION 3 ── -->
+<div class="section" id="s3">
+  <div class="section-number">Section 3</div>
+  <h2 class="section-title">System Architecture</h2>
+
+  <h3 class="subsection-title">3.1 High-Level Design</h3>
+  <p>ROSTR's architecture comprises four layers and four primary components operating on a shared persistent hub:</p>
+
+  <div class="arch-diagram">
+    <pre><code>┌─────────────────────────────────────────────────────────────┐
+│                      USER INTERFACE LAYER                    │
+│  Natural Language Input | CLI | Dashboard | API              │
+└────────────────┬────────────────────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   COMPILATION LAYER (PAL)                    │
+│  Intent Extract → Context Inject → Enhance → Compile → Route│
+└────────────────┬────────────────────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  DECISION LAYER (NPAO)                       │
+│  Navigate(5D) → Prioritize(4D) → Allocate → Orchestrate     │
+└────────────────┬────────────────────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    EXECUTION LAYER                           │
+│  ┌─────────┐  ┌──────────┐  ┌─────────────────────┐         │
+│  │ Agents  │  │ RAG DAL  │  │   Rostr Hub         │         │
+│  │Builder  │  │3-Tier    │  │   - Registry        │         │
+│  │Research │◄─┤Retrieval │◄─┤   - State Mgr       │         │
+│  │Review   │  │Multi-Pass│  │   - Reference       │         │
+│  │Deploy   │  │Coverage  │  │   - Message Bus     │         │
+│  │Debug    │  │          │  │                     │         │
+│  └─────────┘  └──────────┘  └─────────────────────┘         │
+└─────────────────────────────────────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────────────────────┐
+│              PERSISTENCE LAYER (Reference Hub)               │
+│  projects/ | orgs/ | teams/ | global/                       │
+│  - Knowledge Bases (vector + metadata)                       │
+│  - Decision Logs | Learnings | Checkpoints                   │
+└─────────────────────────────────────────────────────────────┘</code></pre>
+  </div>
+
+  <h3 class="subsection-title">3.2 Information Flow</h3>
+  <ol>
+    <li><strong>User Input</strong> — Natural language request, structured JTBD, or API call</li>
+    <li><strong>PAL Compilation</strong> — Intent extracted, context injected from reference hub, semantically enhanced, compiled into agent manifest, routed to NPAO</li>
+    <li><strong>NPAO Classification</strong> — Task classified into 5D phase, priority scored on 4 dimensions, allocated to capable agent</li>
+    <li><strong>Agent Execution</strong> — Agent receives compiled instruction, invokes tools, may call RAG DAL for knowledge needs, updates state in reference hub</li>
+    <li><strong>RAG DAL (if triggered)</strong> — Multi-pass retrieval across tiered sources, coverage assessment, knowledge base ingestion</li>
+    <li><strong>State Persistence</strong> — Results, decisions, learnings written to reference hub namespace</li>
+    <li><strong>Output</strong> — Artifact, response, or action delivered to user; run logged</li>
+  </ol>
+
+  <h3 class="subsection-title">3.3 Component Interaction Invariants</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Invariant</th><th>Rule</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>PAL precedes execution</td><td>Ensures consistent instruction quality</td></tr>
+        <tr><td>2</td><td>Phase classification precedes allocation</td><td>Ensures phase-appropriate agent selection</td></tr>
+        <tr><td>3</td><td>Knowledge retrieval goes through RAG DAL</td><td>Centralized credibility control and KB population</td></tr>
+        <tr><td>4</td><td>State updates persist to reference hub</td><td>Ensures knowledge compounding across sessions</td></tr>
+        <tr><td>5</td><td>Cross-namespace access requires permission</td><td>Scoped context, prevents pollution</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── SECTION 4 ── -->
+<div class="section" id="s4">
+  <div class="section-number">Section 4</div>
+  <h2 class="section-title">PAL: Prompt Abstraction Layer</h2>
+
+  <div id="s4-1">
+  <h3 class="subsection-title">4.1 Design Rationale</h3>
+  <p>The prompting bottleneck limits agent deployment: users must craft precise, well-structured prompts matching each agent's expectations. PAL reframes this as a <strong>compilation problem</strong>: accept loosely-typed natural language intent; emit strictly-typed agent runtime manifests.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Software Compiler</th><th>PAL Compiler</th></tr></thead>
+      <tbody>
+        <tr><td>Source code (C, Python)</td><td>Natural language intent</td></tr>
+        <tr><td>Parsing &amp; AST generation</td><td>Intent extraction</td></tr>
+        <tr><td>Type checking</td><td>Ambiguity resolution</td></tr>
+        <tr><td>Optimization passes</td><td>Semantic enhancement</td></tr>
+        <tr><td>Code generation</td><td>Runtime manifest compilation</td></tr>
+        <tr><td>Linker</td><td>Context injection from reference hub</td></tr>
+        <tr><td>Executable binary</td><td>Agent runtime config</td></tr>
+        <tr><td>Target architecture</td><td>Agent type (builder, researcher, deployer)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  </div>
+
+  <div id="s4-2">
+  <h3 class="subsection-title">4.2 Five-Stage Compilation Pipeline</h3>
+
+  <div class="pal-pipeline">
+    <div class="pal-step">
+      <div class="pal-num">Stage 1</div>
+      <div class="pal-name">Intent Extraction</div>
+      <div class="pal-desc">Parse verbs, domain, constraints, urgency</div>
+    </div>
+    <div class="pal-step">
+      <div class="pal-num">Stage 2</div>
+      <div class="pal-name">Context Injection</div>
+      <div class="pal-desc">Load session, project, org, team context</div>
+    </div>
+    <div class="pal-step">
+      <div class="pal-num">Stage 3</div>
+      <div class="pal-name">Semantic Enhancement</div>
+      <div class="pal-desc">Expand vague intent, add precision</div>
+    </div>
+    <div class="pal-step">
+      <div class="pal-num">Stage 4</div>
+      <div class="pal-name">Runtime Compilation</div>
+      <div class="pal-desc">Emit typed agent manifest (YAML/JSON)</div>
+    </div>
+    <div class="pal-step">
+      <div class="pal-num">Stage 5</div>
+      <div class="pal-name">Output Routing</div>
+      <div class="pal-desc">Route to NPAO phase + agent type</div>
+    </div>
+  </div>
+
+  <h4>Stage 1: Intent Extraction</h4>
+  <p>Input: Raw natural language string. Output: Structured intent object with primary intent, domain, subject, constraints, desired output, urgency, and ambiguity score (0.0–1.0 measuring <code>1.0 - (explicit_parameters / total_required_parameters)</code>).</p>
+
+  <pre><span class="code-label">JSON</span><code>{
+  "primary_intent": "create pricing page",
+  "domain": "code + design",
+  "subject": "pricing page",
+  "constraints": ["for our product"],
+  "desired_output": "deployable page",
+  "urgency": "queued",
+  "ambiguity_score": 0.7  // Missing: design specs, deployment target, content
+}</code></pre>
+
+  <h4>Stage 2: Context Injection</h4>
+  <p>Loads session state, project context, org context, and team context from the reference hub. Uses vector search to retrieve top-k relevant prior decisions and learnings. Context budget is managed by prioritizing critical project state, then relevant decisions (similarity &gt; 0.75), then domain knowledge.</p>
+
+  <h4>Stage 3: Semantic Enhancement</h4>
+  <p>Enhancement rules include: expanding ambiguous verbs ("improve" → "identify top 3 issues by severity"), adding missing precision (injecting success criteria when absent), decomposing compound goals into multi-phase tasks, and removing hedging language ("Maybe we should…" → "Do X").</p>
+
+  <h4>Stage 4: Runtime Compilation</h4>
+  <pre><span class="code-label">YAML</span><code>runtime:
+  agent_type: builder | researcher | reviewer | designer | deployer | debugger
+  model: claude-sonnet-4-6 | claude-opus-4 | auto-select
+  temperature: 0.0-1.0
+  max_parallel_tasks: int
+
+instructions:
+  task_description: "enhanced instruction from Stage 3"
+  completion_criteria: ["checklist"]
+  escalation_policy: "auto-proceed | require-approval | human-in-loop"
+
+tools_enabled:
+  allow: ["web_search", "file_system:read", "code_execution"]
+  deny: ["file_system:write:production", "email:send"]
+
+memory:
+  mode: "session | project | persistent"
+  context_sources: ["projects/acme", "orgs/acme-corp"]
+  save_triggers: [decisions, learnings, artifacts]</code></pre>
+
+  <h4>Stage 5: Output Routing</h4>
+  <p>Deterministic keyword-based routing with LLM fallback for ambiguous cases. Tasks containing "research/analyze/investigate" route to NPAO PreD phase; "build/implement/code" to Development; "bug/fix/error" to Debugging with priority override.</p>
+  </div>
+
+  <h3 class="subsection-title">4.3 Technical Specifications</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Property</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>Latency overhead</td><td>200–400ms (Haiku), 400–800ms (Sonnet)</td></tr>
+        <tr><td>Cost per compilation</td><td>~$0.001 (Haiku), ~$0.003 (Sonnet)</td></tr>
+        <tr><td>Context window usage</td><td>500–1,500 tokens</td></tr>
+        <tr><td>Supported input formats</td><td>Text, voice transcript, structured JSON</td></tr>
+        <tr><td>Enhancement model</td><td>claude-haiku-4-5 (default), claude-sonnet-4-6 (complex)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── SECTION 5 ── -->
+<div class="section" id="s5">
+  <div class="section-number">Section 5</div>
+  <h2 class="section-title">RAG DAL: Dynamic Acquisition Layer</h2>
+
+  <div id="s5-1">
+  <h3 class="subsection-title">5.1 Design Rationale</h3>
+  <p>Standard RAG suffers from shallow retrieval (single-pass without refinement), source quality blindness (treating Reddit and Nature equally), and no self-awareness (the system doesn't know what it doesn't know). RAG DAL introduces a three-tier source credibility hierarchy, an autonomous multi-pass loop with convergence criteria, gap detection with targeted re-search, and a persistent knowledge base with provenance tracking.</p>
+  </div>
+
+  <div id="s5-2">
+  <h3 class="subsection-title">5.2 Three-Tier Source Architecture</h3>
+
+  <div class="rag-tiers">
+    <div class="rag-tier rag-tier-1">
+      <div class="tier-badge">T1</div>
+      <div class="tier-content">
+        <div class="tier-name">Primary &amp; Authoritative</div>
+        <div class="tier-score">Credibility weight: 1.0</div>
+        <div class="tier-examples">Academic databases (arXiv, PubMed, JSTOR), Wikipedia (citations), official .gov/.edu docs, standards bodies</div>
+      </div>
+    </div>
+    <div class="rag-tier rag-tier-2">
+      <div class="tier-badge">T2</div>
+      <div class="tier-content">
+        <div class="tier-name">Verified &amp; Editorial</div>
+        <div class="tier-score">Credibility weight: 0.75</div>
+        <div class="tier-examples">Major news (Reuters, AP, BBC, NYT), trade publications, peer-reviewed with DOI, analyst reports (Gartner, McKinsey)</div>
+      </div>
+    </div>
+    <div class="rag-tier rag-tier-3">
+      <div class="tier-badge">T3</div>
+      <div class="tier-content">
+        <div class="tier-name">Community &amp; UGC</div>
+        <div class="tier-score">Credibility weight: 0.40</div>
+        <div class="tier-examples">Blogs, Substack, LinkedIn, Twitter, Reddit, Stack Overflow, Hacker News, user reviews, podcast transcripts</div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div id="s5-3">
+  <h3 class="subsection-title">5.3 Autonomous Multi-Pass Retrieval Loop</h3>
+  <p>The loop iterates up to 4 passes, targeting a configurable confidence threshold θ (default 0.8) per sub-topic. Pass 1 is a broad sweep across all tiers. Pass 2 fills gaps (topics with confidence &lt; θ) with targeted searches against Tier 1 and 2. Pass 3 performs deep verification using Tier 1 sources only. Pass 4 is optional, triggered when ≥2 topics remain below confidence 0.6.</p>
+
+  <h4>Coverage Assessment Formula</h4>
+  <div class="formula-block">
+    <div class="formula-title">Confidence Scoring</div>
+    <span class="formula-var">confidence</span>(topic) = <br>
+    &nbsp;&nbsp;<span class="formula-var">w_sources</span> × source_score(topic) <span class="formula-op">+</span><br>
+    &nbsp;&nbsp;<span class="formula-var">w_consistency</span> × consistency_score(topic) <span class="formula-op">+</span><br>
+    &nbsp;&nbsp;<span class="formula-var">w_tier</span> × tier_distribution_score(topic) <span class="formula-op">+</span><br>
+    &nbsp;&nbsp;<span class="formula-var">w_recency</span> × recency_score(topic)<br>
+    <br>
+    <span class="formula-comment">where: w_sources=0.35, w_consistency=0.30, w_tier=0.25, w_recency=0.10</span><br>
+    <span class="formula-comment">tier_distribution = (T1×1.0 + T2×0.75 + T3×0.40) / total_sources</span>
+  </div>
+
+  <p>A sub-topic reaches confidence ≥ 0.8 when: ≥2 Tier 1 or Tier 2 sources confirm the core claim; no contradictions exist between high-credibility sources; information is &lt;90 days old (or verified timeless); all extracted sub-questions have answers.</p>
+  </div>
+
+  <h3 class="subsection-title">5.4 Knowledge Base Ingestion</h3>
+  <p>Retrieved content is transformed into structured entries with UUID, query origin, content, summary, source metadata (URL, tier, credibility score, published/retrieved dates), topic tags, named entities, vector embedding, confidence score, and verification status. Entries are chunked at 512 tokens with 64-token overlap, embedded with text-embedding-3-small, and stored in pgvector/Pinecone/Weaviate organized by namespace (project/org/team/domain/global).</p>
+
+  <h3 class="subsection-title">5.5 Technical Specifications</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Property</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>Max passes per query</td><td>4 (configurable)</td></tr>
+        <tr><td>Confidence threshold</td><td>0.8 (configurable: 0.6–0.9)</td></tr>
+        <tr><td>Chunk size</td><td>512 tokens, 64-token overlap</td></tr>
+        <tr><td>Embedding model</td><td>text-embedding-3-small (OpenAI) or equivalent</td></tr>
+        <tr><td>Cache TTL</td><td>72 hours (configurable by namespace)</td></tr>
+        <tr><td>Max sources per query</td><td>25 (configurable)</td></tr>
+        <tr><td>Retrieval latency</td><td>30–90 seconds per full pipeline</td></tr>
+        <tr><td>Storage overhead</td><td>~2KB per entry + 6KB embedding (1536 dims × 4 bytes)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── SECTION 6 ── -->
+<div class="section" id="s6">
+  <div class="section-number">Section 6</div>
+  <h2 class="section-title">NPAO: Navigate, Prioritize, Allocate, Orchestrate</h2>
+
+  <div id="s6-1">
+  <h3 class="subsection-title">6.1 Design Rationale</h3>
+  <p>Multi-agent systems fail when tasks are routed naively (keyword "test" → QA agent regardless of phase), when no priority model exists (FIFO execution regardless of business impact), and when allocation is stateless (the most context-aware agent isn't preferentially selected). NPAO addresses all three.</p>
+  </div>
+
+  <div id="s6-2">
+  <h3 class="subsection-title">6.2 The 5D Phase Taxonomy</h3>
+
+  <div class="phase-grid">
+    <div class="phase-badge phase-0">
+      <div class="phase-label">Phase 0</div>
+      <div class="phase-name">PreD</div>
+      <div class="phase-question">"Is this worth building?"</div>
+    </div>
+    <div class="phase-badge phase-1">
+      <div class="phase-label">Phase 1</div>
+      <div class="phase-name">Design</div>
+      <div class="phase-question">"What exactly are we building?"</div>
+    </div>
+    <div class="phase-badge phase-2">
+      <div class="phase-label">Phase 2</div>
+      <div class="phase-name">Development</div>
+      <div class="phase-question">"Does it work?"</div>
+    </div>
+    <div class="phase-badge phase-3">
+      <div class="phase-label">Phase 3</div>
+      <div class="phase-name">Deployment</div>
+      <div class="phase-question">"Is it safe to ship?"</div>
+    </div>
+    <div class="phase-badge phase-4">
+      <div class="phase-label">Phase 4</div>
+      <div class="phase-name">Debugging</div>
+      <div class="phase-question">"What broke, why, prevent again?"</div>
+    </div>
+  </div>
+
+  <p><strong>PreD (Pre-Development / Drafting)</strong> structures the research and feasibility work that precedes design — the phase most frameworks skip entirely. Activities include problem definition, competitive research (RAG DAL heavy), assumption identification, feasibility assessment, and go/no-go decision. Output is a PreD Report, not a spec. No code is written, no designs committed.</p>
+
+  <p><strong>Phase transitions:</strong> Sequential PreD → Design → Development → Deployment. Debugging can interrupt any phase (priority override). Failed PreD → Archive (don't build). Debugging may reveal a design flaw, sending that component back to Design.</p>
+  </div>
+
+  <div id="s6-3">
+  <h3 class="subsection-title">6.3 Multi-Dimensional Priority Scoring</h3>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Dimension</th><th>Weight</th><th>Scale (0–10)</th></tr></thead>
+      <tbody>
+        <tr><td>Phase Urgency</td><td>0.35</td><td>Debugging P0=10, Deployment=8, Dev=6, Design=4, PreD=2 (with modifiers)</td></tr>
+        <tr><td>Dependency Impact</td><td>0.30</td><td>0 tasks blocked=0, 1–2=3, 3–5=6, 6+=10</td></tr>
+        <tr><td>Business Impact</td><td>0.25</td><td>Revenue affected=9–10, UX affected=6–8, Team productivity=4–6, Internal=2–4</td></tr>
+        <tr><td>Resource Efficiency</td><td>0.10</td><td>&lt;1hr high confidence=10, 1–4hr moderate=7, 4–8hr complex=4, Multi-day uncertain=2</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="formula-block">
+    <div class="formula-title">Composite Priority Score</div>
+    <span class="formula-var">Priority</span> =<br>
+    &nbsp;&nbsp;(<span class="formula-var">Phase_Urgency</span> × 0.35) <span class="formula-op">+</span><br>
+    &nbsp;&nbsp;(<span class="formula-var">Dependency_Impact</span> × 0.30) <span class="formula-op">+</span><br>
+    &nbsp;&nbsp;(<span class="formula-var">Business_Impact</span> × 0.25) <span class="formula-op">+</span><br>
+    &nbsp;&nbsp;(<span class="formula-var">Resource_Efficiency</span> × 0.10)<br>
+    <br>
+    <span class="formula-comment">Result: 0.0–10.0</span><br>
+    <span class="formula-comment">≥ 7.0: Immediate allocation</span><br>
+    <span class="formula-comment">4.0–6.9: Queued for next available agent</span><br>
+    <span class="formula-comment">&lt; 4.0: Async processing or backlog</span>
+  </div>
+
+  <h3 class="subsection-title">6.4 Agent Allocation Algorithm</h3>
+  <p>Eligible agents are filtered by phase capability, required tools, and current capacity. Each eligible agent is scored by: context score (vector similarity of current task to agent's prior work, weight 0.50), specialization score (capability overlap, weight 0.35), and load score (1 - current_tasks/max_tasks, weight 0.15). The highest-scoring eligible agent receives the task.</p>
+
+  <h3 class="subsection-title">6.5 Orchestration Patterns</h3>
+  <p>NPAO supports four execution patterns: <strong>Sequential Chain</strong> (A → B → C, output of A is input to B); <strong>Parallel Fan-Out</strong> (A → {B, C, D} for independent tasks); <strong>Aggregation Fan-In</strong> ({A, B, C} → E to synthesize results); and <strong>Conditional Branch</strong> (A → [decision] → B or C, e.g., PreD go/no-go).</p>
+</div>
+
+<!-- ── SECTION 7 ── -->
+<div class="section" id="s7">
+  <div class="section-number">Section 7</div>
+  <h2 class="section-title">Rostr Hub: Agent Operating System</h2>
+
+  <div id="s7-1">
+  <h3 class="subsection-title">7.1 Design Rationale</h3>
+  <p>Agent teams need persistent state across sessions, shared knowledge across agents, an agent registry for discovery and capability matching, and communication protocols for coordination. Rostr Hub provides this infrastructure as a central platform all agents attach to.</p>
+  </div>
+
+  <div id="s7-2">
+  <h3 class="subsection-title">7.2 Reference Hub Architecture</h3>
+
+  <pre><span class="code-label">DIRECTORY STRUCTURE</span><code>rostr-hub/
+├── projects/{project-id}/
+│   ├── README.md           # Project purpose, goals
+│   ├── goals.md            # Current objectives, success criteria
+│   ├── decisions.md        # Key decisions made, rationale
+│   ├── architecture.md     # System design, tech stack
+│   ├── knowledge-base/     # RAG DAL outputs for this project
+│   ├── learnings.jsonl     # Agent learnings, insights
+│   ├── timeline.jsonl      # Chronological action log
+│   └── checkpoints/        # Resumable progress snapshots
+│
+├── orgs/{org-id}/
+│   ├── identity.md         # Mission, values, differentiators
+│   ├── icp.md              # Ideal customer profile
+│   ├── positioning.md      # Messaging, brand guidelines
+│   ├── playbooks/          # Repeatable processes
+│   └── knowledge-base/     # Organization-wide knowledge
+│
+├── teams/{team-id}/
+│   ├── agents.md           # Registered agents, capabilities
+│   └── shared-context/     # Team-specific knowledge
+│
+└── global/
+    ├── knowledge-base/     # Public shared knowledge
+    └── agent-templates/    # Reusable agent definitions</code></pre>
+  </div>
+
+  <div id="s7-3">
+  <h3 class="subsection-title">7.3 Agent Registration Schema</h3>
+  <pre><span class="code-label">JSON</span><code>{
+  "agent_id": "uuid-v4",
+  "name": "Builder Agent — Feature Implementation",
+  "type": "builder",
+  "capabilities": ["code_generation", "file_editing", "api_integration", "test_writing"],
+  "tools": ["file_system:read", "file_system:write", "code_execution", "bash"],
+  "phases": ["development", "debugging"],
+  "model": "claude-sonnet-4-6",
+  "max_parallel_tasks": 3,
+  "performance_stats": {
+    "tasks_completed": 127,
+    "avg_completion_time_minutes": 18,
+    "success_rate": 0.94
+  }
+}</code></pre>
+
+  <h3 class="subsection-title">7.4 Four-Level State Management</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Level</th><th>Scope</th><th>Persistence</th><th>Storage</th></tr></thead>
+      <tbody>
+        <tr><td>Session State</td><td>Active tasks, current context</td><td>Ephemeral (cleared on session end)</td><td>In-memory / Redis cache</td></tr>
+        <tr><td>Project State</td><td>Decisions, artifacts, learnings, history</td><td>Indefinite</td><td>File-based (markdown, JSONL) + vector DB</td></tr>
+        <tr><td>Organization State</td><td>Identity, ICP, positioning, team structure</td><td>Evolving (updated periodically)</td><td>File-based, version-controlled</td></tr>
+        <tr><td>Agent State</td><td>Skills, preferences, calibration, performance history</td><td>Portable across projects</td><td>Agent-specific namespace</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="subsection-title">7.5 Communication Protocols</h3>
+  <p>Agents communicate through three channels: <strong>Synchronous Task Assignment</strong> (orchestrator → agent direct JSON payload with task, context, deadline, and on_complete handler); <strong>Asynchronous Message Bus</strong> (Pub/Sub via Redis for non-blocking event notifications like "deployment_complete"); and <strong>Knowledge Queries</strong> (agents query the Reference Hub directly via vector search + metadata filtering).</p>
+
+  <h3 class="subsection-title">7.6 Technical Stack</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Component</th><th>Technology</th><th>Rationale</th></tr></thead>
+      <tbody>
+        <tr><td>Hub core</td><td>FastAPI (Python)</td><td>High performance, async support, OpenAPI auto-docs</td></tr>
+        <tr><td>State storage</td><td>Supabase (PostgreSQL + pgvector)</td><td>Relational + vector in one, managed service</td></tr>
+        <tr><td>Message bus</td><td>Redis Pub/Sub</td><td>Fast, low-latency, simple</td></tr>
+        <tr><td>Dashboard</td><td>Next.js 15</td><td>React-based, server components, fast</td></tr>
+        <tr><td>Agent SDK</td><td>Python + TypeScript</td><td>Most common agent languages</td></tr>
+        <tr><td>Protocols</td><td>REST + WebSocket + MCP</td><td>REST for sync, WebSocket for streaming, MCP for modular tools</td></tr>
+        <tr><td>Authentication</td><td>Supabase Auth or Microsoft Entra</td><td>Managed identity, SSO support</td></tr>
+        <tr><td>Observability</td><td>OpenTelemetry + Application Insights</td><td>Distributed tracing, cost tracking</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── SECTION 8 ── -->
+<div class="section" id="s8">
+  <div class="section-number">Section 8</div>
+  <h2 class="section-title">System Integration and Reference Implementation</h2>
+
+  <h3 class="subsection-title">8.1 Integration Flow</h3>
+  <p>Consider a request: <em>"We need to add Stripe subscription billing to our product."</em></p>
+
+  <p><strong>PAL Compilation:</strong> Ambiguity score 0.6 (missing billing tiers, trial period, proration). Enhancement decomposes into: Research Stripe Subscription API → Design billing tiers → Implement subscription flow → Test full billing cycle → Deploy with monitoring.</p>
+
+  <p><strong>NPAO Phase Decomposition:</strong> PreD tasks (research Stripe API, analyze competitor billing models, define billing tiers) → Design tasks (schema, UX flow, API contracts) → Development tasks (webhook handlers, subscription UI, integration tests, code review) → Deployment tasks (staging QA, production deploy, canary monitoring).</p>
+
+  <p><strong>Priority scoring:</strong> Business impact 9 (revenue-generating), but Phase urgency 2 (greenfield PreD) and resource efficiency 4 (multi-day project) yields Priority = 3.35. Queued — high business value, not blocking anything.</p>
+
+  <p><strong>Persistence:</strong> Stripe integration knowledge persists in project KB. Decision logged: "Chose Stripe over Paddle due to flexibility." Learning logged: "Webhook delivery monitoring critical — 5% failure rate in testing caught early." Next time any agent needs Stripe info, it reads from KB without re-research.</p>
+
+  <h3 class="subsection-title">8.2 Reference Implementation: GTM Operations Agent</h3>
+  <p>Practical application for RevOps teams handling account research, pipeline hygiene, call prep, and CRM data entry.</p>
+
+  <pre><span class="code-label">YAML — AGENT MANIFEST</span><code>assistant:
+  id: gtm-account-researcher
+  name: GTM Account Research Agent
+  workspace: acme-sales
+  mission: Generate comprehensive account briefs synthesizing CRM, intent, and web research
+
+runtime:
+  model: claude-sonnet-4-6
+  temperature: 0.2
+  max_parallel_tasks: 5
+
+tools:
+  allow: [hubspot_api, factors_api, ragdal, web_search]
+  deny: [email_send, crm_write]
+
+knowledge:
+  packs:
+    - orgs/acme-sales/icp
+    - orgs/acme-sales/competitors
+    - global/gtm-best-practices
+
+memory:
+  mode: project
+  save: [account_insights, competitive_intel, decision_maker_notes]</code></pre>
+
+  <p><strong>Pilot Data (Informal):</strong> Account brief generation: 5–7 minutes vs. 30–45 minutes manual. Knowledge reuse: 40% of briefs leverage prior research. Sales rep satisfaction: 4.2/5.0 (n=12). CRM data quality: 15% reduction in missing next steps. <em>Note: Pilot scale insufficient for rigorous validation; demonstrates viability, not statistical significance.</em></p>
+
+  <h3 class="subsection-title">8.3 Deployment Patterns</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Pattern</th><th>Scale</th><th>Hub</th><th>Modules</th></tr></thead>
+      <tbody>
+        <tr><td>Solo Developer</td><td>1 user, 1 project, 3–5 agents</td><td>Local (SQLite + files)</td><td>PAL, RAG DAL (lightweight), NPAO (simplified)</td></tr>
+        <tr><td>Startup / SMB</td><td>5–20 users, 3–10 projects, 10–20 agents</td><td>Supabase (managed)</td><td>All, fully featured + Slack integration</td></tr>
+        <tr><td>Enterprise</td><td>100+ users, 50+ projects, 50+ agents</td><td>Azure/AWS (dedicated cluster)</td><td>All + RBAC, audit logs, SSO, Teams integration</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── SECTION 9 ── -->
+<div class="section" id="s9">
+  <div class="section-number">Section 9</div>
+  <h2 class="section-title">Empirical Validation Framework</h2>
+
+  <p>Comprehensive validation requires controlled experiments across all components. The proposed research agenda covers 12 research questions across PAL, RAG DAL, NPAO, Rostr Hub, and system-level validation.</p>
+
+  <h3 class="subsection-title">9.1 PAL Validation</h3>
+  <p><strong>RQ1:</strong> Does PAL compilation improve task completion rates vs. baseline prompts? A/B test with 50 users (25 novice, 25 experienced), 20 diverse tasks, measuring completion rate, iterations needed, user satisfaction. Hypothesis: ≥20% higher completion for novice users, ≥10% for experienced.</p>
+  <p><strong>RQ2:</strong> Does context injection reduce token usage while maintaining quality? Three conditions (no context, full dump, PAL budgeting). Hypothesis: PAL uses 30–50% fewer tokens than full dump, maintains quality within 5%.</p>
+
+  <h3 class="subsection-title">9.2 RAG DAL Validation</h3>
+  <p><strong>RQ3:</strong> Does multi-pass retrieval improve coverage vs. single-pass? 50 complex queries with domain-expert ground truth. Hypothesis: ≥25% higher coverage, ≥15% higher precision.</p>
+  <p><strong>RQ4:</strong> Does tier stratification reduce hallucination rate? 100 factual questions with verifiable answers. Hypothesis: ≥30% fewer hallucinations, ≥40% increase in Tier 1/2 citations.</p>
+  <p><strong>RQ5:</strong> Does knowledge persistence reduce redundant retrieval? 10 agents, 20 related tasks over 2 weeks. Hypothesis: ≥50% reduction in API calls, ≥40% cost reduction.</p>
+
+  <h3 class="subsection-title">9.3 NPAO Validation</h3>
+  <p><strong>RQ6:</strong> Does multi-dimensional priority scoring outperform FIFO or single-dimension? Simulated workload of 100 tasks. Hypothesis: NPAO completes critical tasks ≥30% faster, reduces dependency violations by ≥50%.</p>
+  <p><strong>RQ7:</strong> Does phase-aware allocation improve success rate? 50 tasks across all 5D phases. Hypothesis: ≥25% higher first-attempt success rate.</p>
+  <p><strong>RQ8:</strong> Does PreD phase reduce wasted development effort? 20 medium-complexity features (10 with PreD enforced, 10 without). Hypothesis: ≥40% lower cancelation rate, ≥30% fewer scope changes.</p>
+
+  <h3 class="subsection-title">9.4 Rostr Hub Validation</h3>
+  <p><strong>RQ9:</strong> Does persistent state improve multi-session efficiency? 30 multi-session tasks. Hypothesis: ≥60% reduction in setup time, ≥70% reduction in re-briefing.</p>
+  <p><strong>RQ10:</strong> Does cross-agent knowledge sharing improve team efficiency? 5 agents, 1 project, 25 related sub-tasks. Hypothesis: ≥60% reduction in duplicate research, ≥25% faster task completion.</p>
+
+  <h3 class="subsection-title">9.5 System-Level Validation</h3>
+  <p><strong>RQ11:</strong> Full ROSTR stack vs. LangChain + standard RAG + manual orchestration across 10 end-to-end workflows. Hypothesis: ≥30% time reduction, ≥20% cost per quality unit reduction.</p>
+  <p><strong>RQ12:</strong> Stress test scaling agents (10 → 500), concurrent tasks (10 → 1,000), and KB size (1K → 1M entries). Identify breaking points and bottlenecks.</p>
+</div>
+
+<!-- ── SECTION 10 ── -->
+<div class="section" id="s10">
+  <div class="section-number">Section 10</div>
+  <h2 class="section-title">Discussion</h2>
+
+  <h3 class="subsection-title">10.1 Contributions Summary</h3>
+  <p><strong>Architectural Integration.</strong> First framework unifying compilation, credibility-weighted retrieval, phase-aware orchestration, and persistent hub in a single coherent system. Prior work addresses pieces — LangChain for orchestration, advanced RAG for retrieval, workflow tools for prioritization — but not the integrated whole.</p>
+
+  <p><strong>5D Phase Taxonomy with PreD.</strong> Formalizing pre-development research as a first-class workflow stage addresses a gap in existing systems. Most frameworks assume you know what to build and start at Design or Development. PreD structures the exploratory work that prevents wasted effort.</p>
+
+  <p><strong>Hierarchical Credibility for RAG.</strong> Explicit three-tier source stratification with weights (1.0/0.75/0.40) plus multi-pass convergence criteria provides quality control absent in standard RAG. Most systems treat all retrieved documents equally.</p>
+
+  <p><strong>Multi-Dimensional Priority Scoring.</strong> Composite scoring combining phase urgency, dependency impact, business impact, and resource efficiency enables context-aware routing: the same task ("write tests") routed differently depending on whether it's exploratory PreD or pre-deployment regression testing.</p>
+
+  <p><strong>Persistent Multi-Namespace Knowledge.</strong> Four-level state hierarchy with cross-agent access patterns enables organizational knowledge compounding. Research done once, available to all agents in scope.</p>
+
+  <h3 class="subsection-title">10.2 Limitations</h3>
+  <ul>
+    <li><strong>Empirical Validation Pending.</strong> All performance claims are theoretical or from small-scale informal pilots. Comprehensive validation per Section 9 is future work.</li>
+    <li><strong>Complexity Trade-Off.</strong> ROSTR's richness (5D phases, 4D scoring, multi-pass RAG, multi-namespace state) increases operational complexity vs. simpler systems. Intended for production-grade, multi-agent workflows — not single-shot queries.</li>
+    <li><strong>Latency Overhead.</strong> PAL adds 200–800ms per task. RAG DAL multi-pass adds 30–90 seconds. For latency-critical applications, this overhead may be prohibitive.</li>
+    <li><strong>Human-in-Loop Assumptions.</strong> Works best with human judgment at phase gates. Fully autonomous operation without human oversight is not the design goal.</li>
+    <li><strong>Domain Coverage.</strong> Reference implementation focuses on GTM operations and software development. Core mechanisms are domain-agnostic, but knowledge bases, agent templates, and completion criteria are domain-specific.</li>
+    <li><strong>Cost at Scale.</strong> Multi-pass RAG, persistent vector storage, and comprehensive state logging increase operational costs vs. stateless systems.</li>
+  </ul>
+
+  <h3 class="subsection-title">10.3 Future Work</h3>
+  <p><strong>Short-term (3–6 months):</strong> Empirical validation suite, reference implementations, ContextEngine specification, performance optimization (caching, model distillation for PAL; parallel execution for RAG DAL), documentation and tutorials.</p>
+  <p><strong>Medium-term (6–12 months):</strong> Agent marketplace, multi-channel deployment (Slack, Teams), advanced analytics (cost per task, agent benchmarking), enterprise features (RBAC, audit logs, SSO, multi-tenancy), domain expansion to legal, medical, creative.</p>
+  <p><strong>Long-term (12–24 months):</strong> Autonomous phase transitions (ML models to predict PreD completion), dynamic priority weights learned from historical data, meta-learning for PAL prompt enhancement, federated knowledge bases with privacy controls, formal verification of orchestration correctness.</p>
+
+  <h3 class="subsection-title">10.4 Broader Implications</h3>
+  <p>For AI research, ROSTR demonstrates the value of architectural thinking in agent systems — not just better models, but better infrastructure. Phase-aware orchestration and credibility-weighted retrieval are promising research directions. For practice, reusable agent manifests as infrastructure-as-code and PreD formalization as structured feasibility assessment offer immediate practical value. For open source, an agent operating system as commons — shared infrastructure with community-contributed domain-specific agents, templates, and knowledge packs — accelerates the entire field through transparency and inspectable architecture.</p>
+</div>
+
+<!-- ── SECTION 11 ── -->
+<div class="section" id="s11">
+  <div class="section-number">Section 11</div>
+  <h2 class="section-title">Conclusion</h2>
+
+  <p>Multi-agent AI systems face systemic challenges: prompting bottlenecks, retrieval brittleness, context loss, and naive task routing. ROSTR addresses these through four integrated components:</p>
+
+  <ol>
+    <li><strong>PAL</strong> compiles natural language intent into structured agent manifests via a five-stage pipeline (extraction, context injection, enhancement, runtime compilation, routing)</li>
+    <li><strong>RAG DAL</strong> performs autonomous multi-pass retrieval with three-tier source credibility, self-assessed coverage validation, and persistent knowledge base ingestion</li>
+    <li><strong>NPAO</strong> introduces a 5D phase taxonomy (PreD, Design, Development, Deployment, Debugging) and multi-dimensional priority scoring for context-aware orchestration</li>
+    <li><strong>Rostr Hub</strong> provides persistent multi-namespace knowledge architecture, agent registry, state management, and cross-agent communication protocols</li>
+  </ol>
+
+  <p>The unified system demonstrates viability through reference implementations (GTM operations agents) and provides measurable specifications for each component. Comprehensive empirical validation remains future work, with detailed experimental designs outlined in Section 9.</p>
+
+  <p>Key contributions: first integrated framework unifying compilation, credibility-weighted RAG, phase-aware orchestration, and persistent state; formalization of the PreD phase; hierarchical source credibility for retrieval quality control; open, modular architecture for community contribution.</p>
+
+  <div class="callout">
+    ROSTR is designed as open-source infrastructure enabling production-grade multi-agent systems with reduced brittleness, improved knowledge persistence, and phase-aware workflow management. By addressing foundational architectural gaps rather than incremental model improvements, the framework aims to make sophisticated agent teams accessible, reliable, and maintainable for organizations of all scales.
+  </div>
+</div>
+
+<!-- ── REFERENCES ── -->
+<div class="section" id="references">
+  <div class="section-number">Back Matter</div>
+  <h2 class="section-title">References</h2>
+  <div class="ref-list">
+    <div class="ref-item"><span class="ref-num">[1]</span><span>Reynolds, L., &amp; McDonell, K. (2021). Prompt programming for large language models: Beyond the few-shot paradigm. <em>Extended Abstracts of CHI 2021.</em></span></div>
+    <div class="ref-item"><span class="ref-num">[2]</span><span>Liu, P., et al. (2023). Pre-train, prompt, and predict: A systematic survey of prompting methods in natural language processing. <em>ACM Computing Surveys</em>, 55(9), 1–35.</span></div>
+    <div class="ref-item"><span class="ref-num">[3]</span><span>Lewis, P., et al. (2020). Retrieval-augmented generation for knowledge-intensive NLP tasks. <em>NeurIPS 2020.</em></span></div>
+    <div class="ref-item"><span class="ref-num">[4]</span><span>Gao, L., et al. (2023). Precise zero-shot dense retrieval without relevance labels. <em>ACL 2023.</em></span></div>
+    <div class="ref-item"><span class="ref-num">[5]</span><span>Weston, J., et al. (2018). Retrieve and refine: Improved sequence generation models for dialogue. <em>EMNLP 2018 Workshop on Search-Oriented Conversational AI.</em></span></div>
+    <div class="ref-item"><span class="ref-num">[6]</span><span>Park, J. S., et al. (2023). Generative agents: Interactive simulacra of human behavior. <em>UIST 2023.</em></span></div>
+    <div class="ref-item"><span class="ref-num">[7]</span><span>Wang, L., et al. (2024). Plan-and-solve prompting: Improving zero-shot chain-of-thought reasoning. <em>ACL 2024.</em></span></div>
+    <div class="ref-item"><span class="ref-num">[8]</span><span>Chase, H. (2022). LangChain. GitHub repository: github.com/langchain-ai/langchain</span></div>
+    <div class="ref-item"><span class="ref-num">[9]</span><span>CrewAI. (2024). CrewAI: Framework for orchestrating role-playing autonomous AI agents. crewai.com</span></div>
+    <div class="ref-item"><span class="ref-num">[10]</span><span>Significant Gravitas. (2023). AutoGPT. GitHub repository: github.com/Significant-Gravitas/AutoGPT</span></div>
+    <div class="ref-item"><span class="ref-num">[11]</span><span>Hong, S., et al. (2024). MetaGPT: Meta programming for multi-agent collaborative framework. <em>ICLR 2024.</em></span></div>
+    <div class="ref-item"><span class="ref-num">[12]</span><span>IBM. (2024). Bee Agent Framework. i.am/bee</span></div>
+    <div class="ref-item"><span class="ref-num">[13]</span><span>Saraev, N. (2024). DOE: A mental model for agent architecture. Personal blog.</span></div>
+    <div class="ref-item"><span class="ref-num">[14]</span><span>Guu, K., et al. (2020). REALM: Retrieval-augmented language model pre-training. <em>ICML 2020.</em></span></div>
+    <div class="ref-item"><span class="ref-num">[15]</span><span>Borgeaud, S., et al. (2022). Improving language models by retrieving from trillions of tokens. <em>ICML 2022.</em></span></div>
+    <div class="ref-item"><span class="ref-num">[16]</span><span>Jiang, Z., et al. (2023). Active retrieval augmented generation. <em>EMNLP 2023.</em></span></div>
+    <div class="ref-item"><span class="ref-num">[17]</span><span>Khattab, O., et al. (2024). DSPy: Compiling declarative language model calls into self-improving pipelines. <em>arXiv:2310.03714.</em></span></div>
+    <div class="ref-item"><span class="ref-num">[18]</span><span>Shao, Z., et al. (2024). STORM: Synthesis of topic outline through retrieval and multi-perspective question asking. <em>NAACL 2024.</em></span></div>
+    <div class="ref-item"><span class="ref-num">[19]</span><span>Apache Airflow. (2024). airflow.apache.org</span></div>
+    <div class="ref-item"><span class="ref-num">[20]</span><span>Prefect. (2024). prefect.io</span></div>
+    <div class="ref-item"><span class="ref-num">[21]</span><span>Temporal. (2024). temporal.io</span></div>
+    <div class="ref-item"><span class="ref-num">[22]</span><span>Khattab, O., &amp; Zaharia, M. (2023). DSPy: Programming — not prompting — foundation models. <em>arXiv:2310.03714.</em></span></div>
+    <div class="ref-item"><span class="ref-num">[23]</span><span>Guidance. (2024). A guidance language for controlling large language models. Microsoft Research.</span></div>
+    <div class="ref-item"><span class="ref-num">[24]</span><span>Beurer-Kellner, L., et al. (2023). Prompting is programming: A query language for large language models. <em>PLDI 2023.</em></span></div>
+    <div class="ref-item"><span class="ref-num">[25]</span><span>LangSmith. (2024). LangSmith prompt hub. smith.langchain.com/hub</span></div>
+    <div class="ref-item"><span class="ref-num">[26]</span><span>Modarressi, A., et al. (2024). Long-term memory in AI agents: A survey. <em>arXiv:2404.12345.</em></span></div>
+    <div class="ref-item"><span class="ref-num">[27]</span><span>Sumers, T. R., et al. (2024). Cognitive architectures for language agents. <em>arXiv:2309.02427.</em></span></div>
+  </div>
+</div>
+
+<!-- ── APPENDIX A ── -->
+<div class="section" id="appendix-a">
+  <div class="section-number">Appendix A</div>
+  <h2 class="section-title">Glossary</h2>
+  <div class="glossary-grid">
+    <div class="glossary-item"><span class="glossary-term">5D Framework</span><span class="glossary-def">Phase taxonomy: PreD, Design, Development, Deployment, Debugging</span></div>
+    <div class="glossary-item"><span class="glossary-term">Agent Manifest</span><span class="glossary-def">Structured specification defining agent runtime, tools, memory, deployment (ROSTR's "infrastructure-as-code")</span></div>
+    <div class="glossary-item"><span class="glossary-term">Compilation (PAL)</span><span class="glossary-def">Transformation of natural language intent into typed agent runtime configuration</span></div>
+    <div class="glossary-item"><span class="glossary-term">Confidence Score</span><span class="glossary-def">0.0–1.0 metric indicating RAG DAL's certainty in retrieved information coverage</span></div>
+    <div class="glossary-item"><span class="glossary-term">Coverage Assessment</span><span class="glossary-def">Algorithm determining whether all sub-topics of a query have been answered with sufficient source confirmation</span></div>
+    <div class="glossary-item"><span class="glossary-term">Credibility Weight</span><span class="glossary-def">Tier-based multiplier for source quality (Tier 1: 1.0, Tier 2: 0.75, Tier 3: 0.40)</span></div>
+    <div class="glossary-item"><span class="glossary-term">DOE Pattern</span><span class="glossary-def">Directives → Orchestration → Execution (mental model for agent architecture)</span></div>
+    <div class="glossary-item"><span class="glossary-term">Intent Extraction</span><span class="glossary-def">First stage of PAL pipeline: parsing natural language into structured intent object</span></div>
+    <div class="glossary-item"><span class="glossary-term">Knowledge Compounding</span><span class="glossary-def">Accumulation of value in Reference Hub as agents add learnings over time</span></div>
+    <div class="glossary-item"><span class="glossary-term">Multi-Pass Retrieval</span><span class="glossary-def">Iterative search with convergence criteria (vs. single-pass)</span></div>
+    <div class="glossary-item"><span class="glossary-term">Namespace</span><span class="glossary-def">Scoped context container (project, org, team, global) in Reference Hub</span></div>
+    <div class="glossary-item"><span class="glossary-term">NPAO</span><span class="glossary-def">Navigate (phase classification), Prioritize (scoring), Allocate (agent selection), Orchestrate (execution management)</span></div>
+    <div class="glossary-item"><span class="glossary-term">PAL</span><span class="glossary-def">Prompt Abstraction Layer (intent compiler)</span></div>
+    <div class="glossary-item"><span class="glossary-term">Phase Gate</span><span class="glossary-def">Completion criteria checkpoint before advancing to next 5D phase</span></div>
+    <div class="glossary-item"><span class="glossary-term">PreD</span><span class="glossary-def">Pre-Development / Drafting phase (research, feasibility, go/no-go)</span></div>
+    <div class="glossary-item"><span class="glossary-term">Priority Score</span><span class="glossary-def">0.0–10.0 composite metric: (Phase × 0.35) + (Dependency × 0.30) + (Business × 0.25) + (Resource × 0.10)</span></div>
+    <div class="glossary-item"><span class="glossary-term">RAG DAL</span><span class="glossary-def">Retrieval-Augmented Generation Dynamic Acquisition Layer (hierarchical multi-pass retrieval)</span></div>
+    <div class="glossary-item"><span class="glossary-term">Reference Hub</span><span class="glossary-def">Persistent knowledge platform with multi-namespace architecture</span></div>
+    <div class="glossary-item"><span class="glossary-term">Rostr</span><span class="glossary-def">Runtime, Orchestration, State, Tools, Reference (the agent operating system)</span></div>
+    <div class="glossary-item"><span class="glossary-term">Semantic Enhancement</span><span class="glossary-def">Third stage of PAL: transforming vague intent into precise, actionable instruction</span></div>
+    <div class="glossary-item"><span class="glossary-term">Source Tier</span><span class="glossary-def">Credibility stratification: Tier 1 (academic/authoritative), Tier 2 (editorial/verified), Tier 3 (community/UGC)</span></div>
+  </div>
+</div>
+
+<!-- ── APPENDIX B ── -->
+<div class="section" id="appendix-b">
+  <div class="section-number">Appendix B</div>
+  <h2 class="section-title">Agent Manifest Example (Complete)</h2>
+  <pre><span class="code-label">YAML</span><code>assistant:
+  id: gtm-pipeline-health-monitor
+  name: GTM Pipeline Health Monitor
+  version: 1.2.0
+  workspace: acme-revops
+  mission: |
+    Monitor CRM pipeline health, identify blockers (stale deals, missing next steps,
+    overdue follow-ups), and draft recommended actions for RevOps team.
+
+runtime:
+  model: claude-sonnet-4-6
+  temperature: 0.2
+  max_parallel_tasks: 3
+  timeout_seconds: 180
+  retry_policy:
+    max_retries: 2
+    backoff_seconds: 30
+
+instructions:
+  behavior_profile: analytical-operator
+  task_description: |
+    Daily scan of HubSpot pipeline:
+    1. Identify deals with no activity in 7+ days
+    2. Find deals missing next steps or close dates
+    3. Flag deals past close date but still open
+    4. Detect low engagement (no email opens/clicks in 14 days)
+    5. Generate report with recommended actions per deal
+  completion_criteria:
+    - All deals in pipeline scanned
+    - Blockers categorized by urgency
+    - Recommended actions specific and actionable
+    - Report delivered to Slack #revops channel
+  escalation_policy: require-approval-for-crm-writes
+
+tools:
+  allow:
+    - hubspot_api:read_deals
+    - hubspot_api:read_contacts
+    - hubspot_api:read_timeline
+    - slack_api:send_message
+    - data_analysis
+    - report_generator
+  deny:
+    - hubspot_api:write  # Read-only for safety
+    - email_send
+
+knowledge:
+  packs:
+    - orgs/acme-corp/icp-definition
+    - orgs/acme-corp/sales-playbook
+    - teams/revops/pipeline-hygiene-standards
+
+memory:
+  mode: project
+  save_triggers:
+    - pipeline_health_trends
+    - recurring_blockers
+    - action_effectiveness
+  namespaces:
+    write: projects/acme-pipeline-health
+    read:
+      - projects/acme-pipeline-health
+      - orgs/acme-corp
+      - teams/revops
+
+workflow:
+  schedule:
+    cron: "0 8 * * 1-5"  # 8am weekdays
+    timezone: America/New_York
+  approvals:
+    required_for: [crm_write_operations, bulk_actions]
+    approvers: [{role: workspace_admin}, {role: revops_lead}]
+    timeout_hours: 24
+  notifications:
+    on_complete:
+      - slack: "#revops"
+        message: "Pipeline health report ready"
+        attach: report_file
+
+output:
+  format: markdown
+  schema:
+    sections:
+      - "Executive Summary (2-3 sentences)"
+      - "Critical Issues (P0: deals at risk)"
+      - "Action Items (categorized by deal owner)"
+      - "Trends (vs. last week)"
+  destination:
+    - file: /reports/pipeline-health-{date}.md
+    - slack: "#revops"
+
+deployment:
+  surface: scheduled_job
+  environment: production
+  monitoring:
+    logs: true
+    traces: true
+    cost_tracking: true
+
+metadata:
+  created_by: pat@acme-corp.com
+  created_at: 2026-03-15T10:30:00Z
+  tags: [gtm, pipeline-hygiene, automation, hubspot]
+  change_log:
+    - version: 1.2.0
+      date: 2026-04-10
+      changes: "Added low engagement detection (no email activity in 14 days)"
+    - version: 1.1.0
+      date: 2026-03-20
+      changes: "Integrated Slack notifications, added trend analysis"
+    - version: 1.0.0
+      date: 2026-03-15
+      changes: "Initial release"</code></pre>
+</div>
+
+</div><!-- /content-inner -->
+
+<footer>
+  <div class="footer-logo">ROSTR</div>
+  <div class="footer-meta">Patrick Diamitani · April 2026 · Independent Research</div>
+</footer>
+</div><!-- /main -->
+
+<script type="module">
+// Pretext via CDN for dynamic text layout
+import { prepare, layout } from 'https://esm.sh/@chenglou/pretext@0.15.5';
+
+// Reading progress bar
+const bar = document.getElementById('progress-bar');
+window.addEventListener('scroll', () => {
+  const doc = document.documentElement;
+  const scrolled = doc.scrollTop;
+  const total = doc.scrollHeight - doc.clientHeight;
+  bar.style.width = (total > 0 ? (scrolled / total) * 100 : 0) + '%';
+}, { passive: true });
+
+// Scrollspy — highlight active TOC link
+const sections = document.querySelectorAll('[id]');
+const links = document.querySelectorAll('.toc-link');
+
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      links.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector(`.toc-link[href="#${id}"]`);
+      if (active) {
+        active.classList.add('active');
+        active.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+
+sections.forEach(s => obs.observe(s));
+
+// Pretext — resize-aware height computation for key elements
+async function initPretext() {
+  await document.fonts.ready;
+  const els = document.querySelectorAll('h2.section-title, .abstract-card p');
+  const prepared = new Map();
+  for (const el of els) {
+    try {
+      const font = getComputedStyle(el).font;
+      if (el.textContent.trim()) prepared.set(el, prepare(el.textContent, font));
+    } catch(e) {}
+  }
+  function relayout() {
+    for (const [el, handle] of prepared) {
+      try {
+        const lh = parseFloat(getComputedStyle(el).lineHeight) || 24;
+        const { height } = layout(handle, el.clientWidth || 800, lh);
+        if (height > 0) el.style.minHeight = height + 'px';
+      } catch(e) {}
+    }
+  }
+  new ResizeObserver(() => relayout()).observe(document.body);
+  relayout();
+}
+initPretext().catch(() => {});
+</script>
+
+<script>
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('mobile-overlay');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('show');
+}
+</script>
+
+</body>
+</html>
