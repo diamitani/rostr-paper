@@ -649,6 +649,39 @@ input[type="range"]::-webkit-slider-thumb {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .hidden { display: none !important; }
+
+/* ── BYOK BANNER ── */
+.byok-banner {
+  border-bottom: 1px solid var(--border);
+  padding: 10px 32px;
+  background: #0d0d0d;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.byok-mode {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0; min-width: 110px;
+}
+.byok-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #444; transition: all 0.3s;
+}
+.byok-dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.byok-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: #555; transition: color 0.3s;
+}
+.byok-label.live { color: var(--green); }
+.byok-input {
+  flex: 1; min-width: 180px; max-width: 320px;
+  background: #161616; border: 1px solid #252525; border-radius: 6px;
+  color: var(--text); font-family: var(--font-mono); font-size: 12px;
+  padding: 7px 12px; outline: none; transition: border-color 0.15s;
+  min-height: unset; resize: none;
+}
+.byok-input:focus { border-color: rgba(212,175,55,0.35); }
+.byok-hint { font-size: 11px; color: #383838; margin-left: auto; white-space: nowrap; }
+@media (max-width: 640px) { .byok-hint { display: none; } .byok-banner { padding: 10px 16px; } }
 </style>
 </head>
 <body>
@@ -674,6 +707,21 @@ input[type="range"]::-webkit-slider-thumb {
     <div class="pill"><div class="dot dot-red"></div>NPAO Scorer</div>
     <div class="pill"><div class="dot dot-green"></div>Full Stack</div>
   </div>
+</div>
+
+<!-- ── BYOK BANNER ── -->
+<div class="byok-banner">
+  <div class="byok-mode">
+    <div class="byok-dot" id="byok-dot"></div>
+    <span class="byok-label" id="byok-label">Demo Mode</span>
+  </div>
+  <input type="password" class="byok-input" id="byok-key"
+    placeholder="Paste Anthropic API key (sk-ant-...) for live AI responses"
+    oninput="onByokInput()">
+  <button class="btn btn-ghost btn-sm" id="byok-activate-btn" onclick="activateLiveMode()">Activate Live Mode</button>
+  <button class="btn btn-ghost btn-sm hidden" id="byok-clear-btn" onclick="clearApiKey()"
+    style="color:#f87171;border-color:rgba(248,113,113,0.25);">Clear Key</button>
+  <span class="byok-hint">Your key is sent directly to Anthropic — never stored on our servers</span>
 </div>
 
 <!-- ── TABS ── -->
@@ -1180,6 +1228,123 @@ function setPalStage(n, desc) {
 }
 
 /* ══════════════════════════════════════════
+   BYOK — BRING YOUR OWN KEY
+══════════════════════════════════════════ */
+const PAL_SYSTEM = `You are PAL (Prompt Abstraction Layer), a 5-stage intent compiler for multi-agent AI systems.
+Analyze the user's request and return ONLY a valid JSON object — no markdown fence, no explanation, nothing else:
+{
+  "intent": {
+    "primary_intent": "the actual underlying goal",
+    "domain": "code|design|sales|ops|deploy|debug|content|data",
+    "subject": "what thing the action applies to",
+    "constraints": ["array of limitations"],
+    "desired_output": "what done looks like",
+    "urgency": "immediate|queued|async",
+    "ambiguity_score": 0.0
+  },
+  "enhanced": "detailed multi-line enhanced prompt with numbered steps and a Done criterion",
+  "runtime": {
+    "agent_type": "debugger|deployer|builder|researcher|designer|reviewer|orchestrator|specialist",
+    "model": "claude-haiku-4-5-20251001|claude-sonnet-4-6|claude-opus-4-6",
+    "tools_enabled": {"key": "value"},
+    "memory_mode": "session|project|org",
+    "phase": "prd|design|dev|deploy|debug",
+    "output_format": "string"
+  }
+}`;
+
+const RAG_SYSTEM = `You are RAG DAL (Dynamic Acquisition Layer), an AI research synthesizer.
+Given a research query, produce a structured report in EXACTLY this format (no extra text before or after):
+
+SOURCES:
+T1: [Source Name] — [what it contributes]
+T1: [Source Name] — [what it contributes]
+T2: [Source Name] — [what it contributes]
+T2: [Source Name] — [what it contributes]
+T3: [Source Name] — [what it contributes]
+T3: [Source Name] — [what it contributes]
+
+CONFIDENCE:
+[Topic 1]: 0.XX
+[Topic 2]: 0.XX
+[Topic 3]: 0.XX
+[Topic 4]: 0.XX
+
+REPORT:
+[3-5 paragraph research synthesis with specific data points, named sources, key findings, and actionable insights. Use real knowledge. Be concrete — cite numbers and sources.]`;
+
+const FS_SYSTEM = `You are a ROSTR framework architect. Given any product or engineering request, produce a 5-step walkthrough showing how PAL, NPAO, RAG DAL, and the Rostr Hub coordinate to complete it.
+Return ONLY valid JSON (no markdown fence, no other text):
+{
+  "steps": [
+    {"title": "PAL compiles the raw request", "component": "PAL", "body": "3-5 sentences specific to this request"},
+    {"title": "NPAO builds the task tree", "component": "NPAO", "body": "..."},
+    {"title": "RAG DAL executes research", "component": "RAG", "body": "..."},
+    {"title": "Agents execute in phase order", "component": "HUB", "body": "..."},
+    {"title": "Reference Hub compounds knowledge", "component": "HUB", "body": "..."}
+  ]
+}
+Body strings must be plain text only (no HTML). Use literal \\n for line breaks.`;
+
+function getApiKey() {
+  return localStorage.getItem('rostr_api_key') || '';
+}
+
+function setApiKey(key) {
+  localStorage.setItem('rostr_api_key', key.trim());
+  updateByokUI(true);
+}
+
+function clearApiKey() {
+  localStorage.removeItem('rostr_api_key');
+  document.getElementById('byok-key').value = '';
+  updateByokUI(false);
+}
+
+function onByokInput() {
+  const val = document.getElementById('byok-key').value.trim();
+  document.getElementById('byok-activate-btn').style.opacity =
+    val.startsWith('sk-ant-') ? '1' : '0.5';
+}
+
+function activateLiveMode() {
+  const val = document.getElementById('byok-key').value.trim();
+  if (!val) return;
+  setApiKey(val);
+  document.getElementById('byok-key').value = '\u2022'.repeat(20);
+}
+
+function updateByokUI(live) {
+  document.getElementById('byok-dot').classList.toggle('live', live);
+  const lbl = document.getElementById('byok-label');
+  lbl.textContent = live ? 'Live Mode' : 'Demo Mode';
+  lbl.classList.toggle('live', live);
+  document.getElementById('byok-activate-btn').classList.toggle('hidden', live);
+  document.getElementById('byok-clear-btn').classList.toggle('hidden', !live);
+}
+
+async function callAPI(message, system) {
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error('No API key');
+  const res = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, api_key: apiKey, system }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data.text;
+}
+
+// Restore key state on load
+window.addEventListener('DOMContentLoaded', () => {
+  if (getApiKey()) {
+    updateByokUI(true);
+    document.getElementById('byok-key').value = '\u2022'.repeat(20);
+  }
+});
+
+/* ══════════════════════════════════════════
    PAL COMPILER DATA
 ══════════════════════════════════════════ */
 const palData = {
@@ -1454,17 +1619,12 @@ function loadPalExample(val) {
   document.getElementById('pal-input').value = palData[val].raw;
 }
 
-async function runPAL() {
-  const raw = document.getElementById('pal-input').value.trim();
-  if (!raw) return;
-
-  // Match to data or use generic
+function getPalDemo(raw) {
   let key = Object.keys(palData).find(k =>
     raw.toLowerCase().includes(palData[k].raw.toLowerCase().split(' ')[0]) ||
     raw.toLowerCase() === palData[k].raw.toLowerCase()
   );
   if (!key) {
-    // Fallback: pick by keyword
     if (raw.match(/fix|bug|broken|error|crash/i)) key = 'fix';
     else if (raw.match(/ship|deploy|push|release/i)) key = 'ship';
     else if (raw.match(/email|outreach|write.*to/i)) key = 'email';
@@ -1473,16 +1633,21 @@ async function runPAL() {
     else if (raw.match(/agent|hubspot|monitor/i)) key = 'agent';
     else if (raw.match(/pricing/i)) key = 'pricing';
     else if (raw.match(/look|visual|design/i)) key = 'qa';
-    else key = 'landing'; // default
+    else key = 'landing';
   }
+  return palData[key];
+}
 
-  const d = palData[key];
+async function runPAL() {
+  const raw = document.getElementById('pal-input').value.trim();
+  if (!raw) return;
+  const apiKey = getApiKey();
+
   const btn = document.querySelector('[onclick="runPAL()"]');
 
   // Reset
   for (let i = 1; i <= 5; i++) {
-    const el = document.getElementById('pal-s' + i);
-    el.classList.remove('active', 'done');
+    document.getElementById('pal-s' + i).classList.remove('active', 'done');
   }
   ['pal-intent-output','pal-enhance-output','pal-runtime-output'].forEach(id => {
     document.getElementById(id).classList.add('hidden');
@@ -1490,53 +1655,70 @@ async function runPAL() {
   ['pal-intent-placeholder','pal-enhance-placeholder','pal-runtime-placeholder'].forEach(id => {
     document.getElementById(id).style.display = 'block';
   });
-
   btn.querySelector('#pal-btn-label').textContent = 'Compiling...';
 
-  // Stage 1
+  // Stages 1-2 are identical regardless of mode
   setPalStage(1, 'Parsing verbs, domain, constraints, urgency...');
   await sleep(600);
-
   setPalStage(2, 'Loading session, project, org, team context from hub...');
   await sleep(500);
 
-  setPalStage(3, 'Expanding vague intent into precise instructions...');
+  let d;
+  if (apiKey) {
+    setPalStage(3, 'Calling PAL compiler \u2014 live mode active...');
+    btn.querySelector('#pal-btn-label').textContent = 'Waiting for Claude\u2026';
+    try {
+      const text = await callAPI(raw, PAL_SYSTEM);
+      const clean = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+      const parsed = JSON.parse(clean);
+      d = {
+        intent: { ambiguity_score: 0.5, ...parsed.intent },
+        enhanced: parsed.enhanced || '',
+        runtime: parsed.runtime || {}
+      };
+    } catch (err) {
+      setPalStage(3, '\u26a0 Live call failed \u2014 using demo data');
+      d = getPalDemo(raw);
+    }
+    btn.querySelector('#pal-btn-label').textContent = 'Compiling...';
+  } else {
+    setPalStage(3, 'Expanding vague intent into precise instructions...');
+    await sleep(700);
+    d = getPalDemo(raw);
+  }
 
-  // Show intent
+  // Show intent (Stage 1 output)
   document.getElementById('pal-intent-placeholder').style.display = 'none';
-  const ambig = d.intent.ambiguity_score;
-  document.getElementById('pal-ambig-badge').textContent = `ambiguity: ${ambig}`;
-  document.getElementById('pal-ambig-badge').style.display = 'inline';
-  document.getElementById('pal-ambig-badge').style.color = ambig > 0.7 ? '#f87171' : ambig > 0.5 ? '#fbbf24' : '#34d399';
-
-  const intentStr = JSON.stringify(d.intent, null, 2);
-  document.getElementById('pal-intent-output').innerHTML = syntaxHighlightJSON(intentStr);
+  const ambig = +((d.intent && d.intent.ambiguity_score != null ? d.intent.ambiguity_score : 0.5));
+  const badge = document.getElementById('pal-ambig-badge');
+  badge.textContent = `ambiguity: ${ambig}${apiKey ? ' \u00b7 live' : ''}`;
+  badge.style.display = 'inline';
+  badge.style.color = ambig > 0.7 ? '#f87171' : ambig > 0.5 ? '#fbbf24' : '#34d399';
+  document.getElementById('pal-intent-output').innerHTML = syntaxHighlightJSON(JSON.stringify(d.intent, null, 2));
   document.getElementById('pal-intent-output').classList.remove('hidden');
 
-  await sleep(700);
+  await sleep(apiKey ? 150 : 700);
   setPalStage(4, 'Generating runtime manifest: tools, memory, permissions...');
 
-  // Show enhancement
   document.getElementById('pal-enhance-placeholder').style.display = 'none';
   document.getElementById('pal-enhance-output').textContent = d.enhanced;
   document.getElementById('pal-enhance-output').classList.remove('hidden');
 
-  await sleep(600);
-  setPalStage(5, 'Routing to NPAO → phase classification + agent assignment');
+  await sleep(apiKey ? 150 : 600);
+  setPalStage(5, 'Routing to NPAO \u2192 phase classification + agent assignment');
 
-  // Show runtime
   document.getElementById('pal-runtime-placeholder').style.display = 'none';
   document.getElementById('pal-runtime-output').innerHTML = syntaxHighlightRuntime(d.runtime);
   document.getElementById('pal-runtime-output').classList.remove('hidden');
 
-  // Mark all done
   await sleep(300);
   for (let i = 1; i <= 5; i++) {
     const el = document.getElementById('pal-s' + i);
     el.classList.remove('active');
     el.classList.add('done');
   }
-  document.getElementById('pal-stage-desc').textContent = '✓ Compilation complete — manifest ready';
+  document.getElementById('pal-stage-desc').textContent =
+    `\u2713 Compilation complete${apiKey ? ' (live)' : ''} \u2014 manifest ready`;
   btn.querySelector('#pal-btn-label').textContent = 'Compile Intent';
 }
 
@@ -1808,14 +1990,20 @@ function loadRagExample(val) {
 async function runRAGDAL() {
   let query = document.getElementById('ragdal-query').value.trim();
   if (!query) return;
+  const apiKey = getApiKey();
 
-  // Match to data
+  // Match demo data for source animation
   let key = 'music';
   if (query.match(/eor|employer|global|atlas|deel|remote/i)) key = 'eor';
   else if (query.match(/agent|langchain|crew|framework|orchestr/i)) key = 'agent';
   else if (ragData[query]) key = query;
-
   const d = ragData[key];
+
+  // Fire API call in parallel with animation (returns null on failure)
+  let apiPromise = null;
+  if (apiKey) {
+    apiPromise = callAPI(query, RAG_SYSTEM).catch(() => null);
+  }
 
   // Reset
   document.getElementById('rag-status').textContent = 'Running...';
@@ -1878,11 +2066,40 @@ async function runRAGDAL() {
     chip.innerHTML = `<div class="tier-dot t${s.tier}"></div>${s.label} <span style="color:var(--text-muted);font-size:10px;">T${s.tier}</span>`;
     srcContainer3.appendChild(chip);
   }
-  document.getElementById('rag-p3-badge').textContent = `2 sources · threshold reached ✓`;
+  document.getElementById('rag-p3-badge').textContent = `2 sources \u00b7 threshold reached \u2713`;
   document.getElementById('rag-p3').classList.remove('running');
   document.getElementById('rag-p3').classList.add('complete');
 
   await sleep(300);
+
+  // Resolve API call (fired in parallel — should be done or nearly done by now)
+  let confData = d.confidences;
+  let reportText = d.report;
+
+  if (apiPromise) {
+    document.getElementById('rag-btn-label').textContent = apiKey ? 'Awaiting live analysis\u2026' : 'Run Retrieval Pipeline';
+    const apiText = await apiPromise;
+    if (apiText) {
+      // Parse CONFIDENCE section
+      const confM = apiText.match(/CONFIDENCE:\s*\n([\s\S]+?)(?:\n\nREPORT:)/);
+      if (confM) {
+        const parsed = confM[1].trim().split('\n')
+          .map(l => {
+            const m = l.match(/^(.+?):\s*(\d*\.?\d+)/);
+            if (!m) return null;
+            const raw = parseFloat(m[2]);
+            return { topic: m[1].trim(), val: raw <= 1 ? Math.round(raw * 100) : Math.round(raw) };
+          })
+          .filter(Boolean);
+        if (parsed.length) confData = parsed;
+      }
+      // Parse REPORT section
+      const reportM = apiText.match(/REPORT:\s*\n([\s\S]+)/);
+      if (reportM) {
+        reportText = '\u2728 Live Analysis (via Claude API)\n\n' + reportM[1].trim();
+      }
+    }
+  }
 
   // Show confidence bars
   const confWrap = document.getElementById('rag-confidence-wrap');
@@ -1890,7 +2107,7 @@ async function runRAGDAL() {
   confBars.innerHTML = '';
   confWrap.classList.remove('hidden');
 
-  for (const c of d.confidences) {
+  for (const c of confData) {
     const row = document.createElement('div');
     row.className = 'rag-confidence';
     const color = c.val >= 85 ? '#34d399' : c.val >= 70 ? '#D4AF37' : '#f87171';
@@ -1907,12 +2124,12 @@ async function runRAGDAL() {
   });
 
   // Show report
-  await sleep(600);
+  await sleep(400);
   document.getElementById('rag-report-placeholder').style.display = 'none';
-  document.getElementById('rag-report-output').textContent = d.report;
+  document.getElementById('rag-report-output').textContent = reportText;
   document.getElementById('rag-report-output').classList.remove('hidden');
 
-  document.getElementById('rag-status').textContent = '✓ Complete — stored in KB';
+  document.getElementById('rag-status').textContent = `\u2713 Complete${apiKey ? ' (live)' : ''} \u2014 stored in KB`;
   document.getElementById('rag-status').style.color = 'var(--green)';
   document.getElementById('rag-btn-label').textContent = 'Run Retrieval Pipeline';
 }
@@ -2022,6 +2239,7 @@ function loadFsScenario(val) {
 async function runFullStack() {
   const raw = document.getElementById('fs-input').value.trim();
   if (!raw) return;
+  const apiKey = getApiKey();
 
   let key = 'pricing';
   if (raw.match(/stripe|billing|subscription/i)) key = 'billing';
@@ -2029,13 +2247,31 @@ async function runFullStack() {
   else if (raw.match(/rfp/i)) key = 'rfp';
   else if (raw.match(/outreach|sdr|email|personali/i)) key = 'outreach';
   else if (raw.match(/pricing/i)) key = 'pricing';
-
   const s = fsScenarios[key];
 
-  // Reset all steps
+  // Reset
   for (let i = 1; i <= 5; i++) {
-    const card = document.getElementById('fs-step-' + i);
-    card.classList.remove('active', 'done');
+    document.getElementById('fs-step-' + i).classList.remove('active', 'done');
+  }
+
+  let steps = s.steps;
+
+  if (apiKey) {
+    document.getElementById('fs-btn-label').textContent = 'Getting live walkthrough\u2026';
+    try {
+      const text = await callAPI(raw, FS_SYSTEM);
+      const clean = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+      const parsed = JSON.parse(clean);
+      if (parsed.steps && parsed.steps.length === 5) {
+        steps = parsed.steps.map(st => ({
+          title: st.title,
+          component: st.component,
+          body: st.body.replace(/\\n/g, '<br>').replace(/\n/g, '<br>')
+        }));
+      }
+    } catch (err) {
+      // fall through to demo steps
+    }
   }
 
   document.getElementById('fs-btn-label').textContent = 'Running...';
@@ -2043,19 +2279,18 @@ async function runFullStack() {
   for (let i = 1; i <= 5; i++) {
     const card = document.getElementById('fs-step-' + i);
     const body = document.getElementById('fs-body-' + i);
-    const step = s.steps[i - 1];
-
+    const step = steps[i - 1];
     if (!step) break;
 
-    // Activate
     card.classList.add('active');
     card.querySelector('.step-title').textContent = step.title;
     body.innerHTML = step.body;
+    if (step.component) {
+      card.querySelector('.step-component').textContent = step.component;
+    }
     card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
     await sleep(1400);
-
-    // Mark done
     card.classList.remove('active');
     card.classList.add('done');
   }
