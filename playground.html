@@ -693,10 +693,12 @@ async function runPipeline(input, stripId) {
   await sleep(isLive ? 200 : 400);
   const phase = detectPhase(input);
   const score = detectScore(input);
-  addLog('NPAO', `Phase: ${phase} · Priority: ${score}/10`);
+  addLog('NPAO', `Class: ${phase} · Urgency: ${score}/10`);
   await sleep(isLive ? 150 : 300);
+  addLog('NPAO', `Execution order: N→A→P→O applied`);
+  await sleep(isLive ? 100 : 200);
   addLog('NPAO', `Agent assigned: ${detectAgent(input)}`);
-  setCard('npao', 'done', `${phase} · Score ${score} ✓`);
+  setCard('npao', 'done', `${phase} · ${score}/10 ✓`);
   setPipelineStage(stripId, 'npao', 'done');
 
   // RAG
@@ -722,24 +724,29 @@ function finalizePipeline(stripId, stored) {
   addLog('AGENT', 'Response delivered successfully');
 }
 
-/* Phase / score detection (for console display) */
+/* NPAO classification (Necessity · Priority · Anxiety · Opportunity) */
 function detectPhase(t) {
-  if (t.match(/debug|broken|bug|error|crash|failing/i)) return 'Debug';
-  if (t.match(/deploy|ship|push|release|production/i)) return 'Deploy';
-  if (t.match(/build|implement|code|add|create|write/i)) return 'Dev';
-  if (t.match(/design|wireframe|ui|ux|layout/i)) return 'Design';
-  return 'PreD';
+  // N — Necessity: hard blocker, system failure, must resolve now
+  if (t.match(/debug|broken|bug|error|crash|failing|not work|urgent|asap|blocked/i)) return 'N — Necessity';
+  // A — Anxiety: cognitive friction, uncertainty, concern before action
+  if (t.match(/worried|concern|unsure|confus|risk|safe|secure|should i|is it ok|anxiety/i)) return 'A — Anxiety';
+  // P — Priority: mission-critical forward motion
+  if (t.match(/deploy|ship|push|release|production|launch|crm|hubspot|salesforce/i)) return 'P — Priority';
+  // O — Opportunity: growth, new capability, exploration
+  return 'O — Opportunity';
 }
 function detectScore(t) {
-  if (t.match(/debug|broken|bug|crash|urgent|asap/i)) return (8 + Math.random()*1.5).toFixed(1);
-  if (t.match(/deploy|ship/i)) return (7 + Math.random()).toFixed(1);
+  if (t.match(/debug|broken|bug|crash|urgent|asap|blocked/i)) return (9 + Math.random()*0.9).toFixed(1);
+  if (t.match(/deploy|ship|launch/i)) return (7.5 + Math.random()).toFixed(1);
+  if (t.match(/worried|concern|risk/i)) return (6 + Math.random()*1.5).toFixed(1);
   return (5 + Math.random()*2).toFixed(1);
 }
 function detectAgent(t) {
-  if (t.match(/debug|broken|bug|error|crash/i)) return 'Debug Agent (priority override)';
+  if (t.match(/debug|broken|bug|error|crash/i)) return 'Debug Agent (Necessity override)';
   if (t.match(/deploy|ship|push/i)) return 'Deploy Agent + Canary Agent';
   if (t.match(/email|outreach|write/i)) return 'Specialist Agent (GTM)';
   if (t.match(/agent|build.*agent|monitor/i)) return 'Orchestrator (agent factory)';
+  if (t.match(/worried|concern|risk|secure/i)) return 'Risk Assessment Agent';
   if (t.match(/code|build|implement|add/i)) return 'Builder Agent + Review Agent';
   return 'Research Agent + Planning Agent';
 }
@@ -752,7 +759,9 @@ const demos = {
     trigger: /pricing|price|tier|freemium|monetiz/i,
     tags: ['pal','npao','rag','hub'],
     stored: 'project/pricing/knowledge-base/competitive-analysis',
-    response: `## Pricing Page — PreD Analysis Complete
+    response: `## Pricing Page — Opportunity Class (O)
+
+**NPAO classification:** O — Opportunity · Urgency 6.2/10 · Execution: N→A→P→O complete
 
 **Competitive context** (RAG DAL: 9 sources, confidence 8.4/10):
 
@@ -779,9 +788,9 @@ const demos = {
     trigger: /debug|broken|bug|error|crash|failing|not work|why is/i,
     tags: ['pal','npao','hub'],
     stored: 'project/debug/learnings.jsonl',
-    response: `## Debug Investigation — Priority Override Active
+    response: `## Debug Investigation — Necessity Class (N)
 
-**Phase:** Debugging (P0) · Priority score: 9.2/10 · All other tasks paused
+**NPAO classification:** N — Necessity · Urgency 9.4/10 · All tasks paused
 
 **Investigation protocol:**
 
@@ -899,7 +908,7 @@ workflow:
     stored: 'project/billing/knowledge-base/stripe-integration',
     response: `## Stripe Subscription Billing — Implementation Plan
 
-**Phase:** Dev · Priority: 6.8/10 · Agent: Builder Agent + Review Agent
+**NPAO classification:** P — Priority · Urgency 6.8/10 · Agent: Builder Agent + Review Agent
 
 **RAG DAL finding:** Webhook delivery has a 3–8% failure rate industry-wide. Idempotency keys are non-negotiable.
 
